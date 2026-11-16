@@ -201,6 +201,17 @@ await page.getByTestId("reset-start").click();
 await page.getByTestId("reset").click();
 await page.waitForFunction(() => document.querySelector('select[aria-label="Signed in as"]')?.value === "u-cro");
 check("Restore baseline data resets everything (signed in as CRO again)", (await role.inputValue()) === "u-cro");
+// Backtest (DR-15, test 60): no closed quarter yet; the example quarter shows no label (R-8)
+await page.goto(`${base}/forecast`);
+await page.getByRole("link", { name: "Backtest" }).click();
+await page.getByTestId("not-backtested").waitFor();
+check("no closed quarter: Not yet backtested", (await page.getByTestId("not-backtested").innerText()).includes("Not yet backtested"));
+await page.getByTestId("show-synthetic").click();
+const bt = await page.getByTestId("synthetic").innerText();
+check("test 60: BT-1 shows $1.0M / $3.0M / $4.0M, Actual $2.0M, precision 33.3%, capture 50.0%, bias −2.5 days",
+  ["$1.0M / $3.0M / $4.0M", "$2.0M", "33.3%", "50.0%", "+$1.0M", "−2.5 days"].every((x) => bt.includes(x)), bt.replace(/\s+/g, " ").slice(0, 300));
+check("example carries no synthetic label (R-8, Liran's decision)", (await page.locator('[data-testid="synthetic"] .synthetic-tag').count()) === 0);
+
 // Planning standard v2 (test 45): RevOps approves Procurement and legal 12 / 30 / 40 from today
 await role.selectOption("u-revops");
 await page.getByRole("link", { name: "Administration" }).click();

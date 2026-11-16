@@ -48,9 +48,10 @@ export default function ForecastHome() {
             {f.quarter.label} · as of {formatDisplayDate(f.asOf)} · quarter ends {formatDisplayDate(f.quarter.end)}
           </p>
         </div>
-        {actingUser.role === "sales_manager" ? (
-          <div className="actions">
-            {submitted ? <span className="muted small">{submitted}</span> : null}
+        <div className="actions">
+          {actingUser.role === "sales_manager" && submitted ? <span className="muted small">{submitted}</span> : null}
+          <Link href="/forecast/backtest" className="btn">Backtest</Link>
+          {actingUser.role === "sales_manager" ? (
             <button
               type="button"
               className="btn btn-primary"
@@ -63,8 +64,8 @@ export default function ForecastHome() {
             >
               Submit my forecast
             </button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
       <div className="number-row">

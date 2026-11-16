@@ -5,6 +5,7 @@
 import { isoDate, type IsoDate } from "@/domain/dates";
 import type { Group } from "@/domain/entities";
 import { usdM, type Cents } from "@/domain/money";
+import type { BacktestDeal } from "@/domain/backtest";
 
 export const SYNTHETIC_LABEL = "Synthetic example — demonstrates the calculation, not accuracy";
 
@@ -29,3 +30,12 @@ export const BT1 = {
     { deal: "E", tcv: usdM(1.0), groupAtRun: "late", standardPlannedDate: isoDate("2027-01-15"), signedDate: isoDate("2027-01-10") },
   ] satisfies Bt1Deal[],
 } as const;
+
+/** BT-1 deals in the shape the backtest calculation reads. */
+export const BT1_DEALS: BacktestDeal[] = BT1.deals.map((d) => ({
+  name: `Deal ${d.deal}`,
+  tcv: d.tcv,
+  group: d.groupAtRun,
+  planned: d.standardPlannedDate,
+  signedOn: d.signedDate,
+}));

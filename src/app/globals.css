@@ -1002,3 +1002,12 @@ tr.archived td {
   border-color: var(--line);
   color: var(--muted);
 }
+
+/* Backtest */
+.backtest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin: 8px 0 16px; }
+.metric { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.metric-name { font-size: 0.85em; color: var(--muted); }
+.metric-value { font-size: 1.3em; font-weight: 600; margin-top: 2px; }
+.synthetic { border-style: dashed; }
+.synthetic-label { font-weight: 600; margin-top: 0; }
+.synthetic-tag { display: inline-block; font-size: 0.72em; font-weight: 600; padding: 1px 6px; border-radius: 4px; border: 1px dashed currentColor; opacity: 0.75; vertical-align: middle; }
