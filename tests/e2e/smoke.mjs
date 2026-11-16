@@ -92,7 +92,7 @@ await page.getByLabel("ARR").fill("600000");
 await page.getByLabel("Non-recurring").fill("200000");
 check("TCV preview recomputes to $2,000,000", (await page.getByTestId("tcv-preview").innerText()) === "$2,000,000");
 await page.getByRole("button", { name: "Save changes" }).click();
-await page.locator(".details.revenue").waitFor();
+await page.locator(".details.revenue", { hasText: "$2,000,000" }).waitFor({ timeout: 5000 }).catch(() => {});
 check("deal's manager edits revenue; TCV shows $2,000,000", (await page.locator(".details.revenue").innerText()).includes("$2,000,000"));
 const history = await page.locator("h2:has-text('Change history') + table tbody").innerText();
 check("change history logs field, old and new value, author", /tcv\s+\$1,500,000\s+\$2,000,000\s+Elena Ruiz/.test(history), history.replace(/\s+/g, " ").slice(0, 160));
@@ -201,6 +201,25 @@ await page.getByTestId("reset-start").click();
 await page.getByTestId("reset").click();
 await page.waitForFunction(() => document.querySelector('select[aria-label="Signed in as"]')?.value === "u-cro");
 check("Restore baseline data resets everything (signed in as CRO again)", (await role.inputValue()) === "u-cro");
+// Planning standard v2 (test 45): RevOps approves Procurement and legal 12 / 30 / 40 from today
+await role.selectOption("u-revops");
+await page.getByRole("link", { name: "Administration" }).click();
+await page.getByTestId("standard-form").waitFor();
+check("standards table shows Security Banks v1", /approval\s+Banks\s+v1\s+24 \/ 30 \/ 45 days/.test(await page.getByTestId("standards").innerText()));
+await page.getByRole("combobox", { name: "Standard step" }).selectOption("procurement_legal");
+await page.getByLabel("Fast days").fill("12");
+await page.getByLabel("Standard days").fill("30");
+await page.getByLabel("Slow days").fill("40");
+await page.getByLabel("Rationale").fill("Legal teams are slower this year");
+await page.getByRole("button", { name: "Approve version" }).click();
+await page.getByTestId("standard-result").waitFor();
+check("Procurement and legal v2 approved", (await page.getByTestId("standard-result").innerText()).includes("v2: 12 / 30 / 40"));
+await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
+await page.getByTestId("core").waitFor();
+await page.waitForFunction(() => document.querySelector('[data-testid="core"]')?.textContent === "$13.5M", null, { timeout: 5000 }).catch(() => {});
+check("test 45: Core falls to $13.5M as Energy Group moves to Stretch", (await page.getByTestId("core").innerText()) === "$13.5M", await page.getByTestId("core").innerText());
+check("test 45: Conservative $3.5M as Insurance Group leaves Firm", (await page.getByTestId("conservative").innerText()) === "$3.5M", await page.getByTestId("conservative").innerText());
+
 // RevOps waiver (test 53): a Sales Manager sees no form; RevOps waives Legal on Retail, which drops to Core
 await role.selectOption("u-mgr-a");
 await page.goto(`${base}/forecast/deals/opp-retail`);

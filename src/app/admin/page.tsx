@@ -4,6 +4,7 @@ import { useState } from "react";
 import { advanceOneWeek } from "@/application/runs";
 import { formatDisplayDate } from "@/domain/dates";
 import { DEMO_AS_OF } from "@/seed/canonical";
+import { PlanningStandards } from "@/features/admin/PlanningStandards";
 import { useStore } from "@/features/shell/StoreProvider";
 
 export default function AdminPage() {
@@ -43,6 +44,10 @@ export default function AdminPage() {
             {moving ? "Moving…" : "Move to next week"}
           </button>
         </div>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <PlanningStandards />
       </div>
 
       <div className="panel" style={{ marginTop: 16 }}>

@@ -16,7 +16,8 @@ Read this first when resuming. Each line is a pushed, tested piece.
 - [x] Disputes: `src/domain/dispute-rules.ts` (Bet acceptance check reruns the path with the Bet steps done), `src/application/disputes.ts` (deal's Sales Manager only, one live per deal per quarter, logged), "Manager's position" block on the deal screen. One Bet per Dispute in the UI; the service accepts several.
 - [x] Add an email to a deal: .eml import (D-09), origin from the Account's domains (DR-05), duplicate by content hash or Message-ID (DR-06), unverifiable quote check; tests 26, 27, 52, 55; sample emails on the deal screen.
 - [x] RevOps waiver and per-deal Link change (DR-07, test 53): never Budget or Vendor selection, reason required, acyclic, logged; waived deal never Firm; panel on the deal screen.
-- [ ] Next: planning-standard approval (test 45), backtest (BT-1, DR-15; R-8 open question on the synthetic label).
+- [x] Planning-standard approval (DR-01, test 45): RevOps only, new version, never retroactive, logged; standards table with calibration spans in Administration; bridge cause "planning standard changed" (R-14).
+- [ ] Next: backtest (BT-1, DR-15; R-8 open question on the synthetic label).
 - [ ] Raise and withdraw Disputes from the UI, Bet acceptance check.
 - [ ] Next week control, backtest (BT-1, DR-15 open question R-8).
 

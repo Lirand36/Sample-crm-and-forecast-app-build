@@ -116,6 +116,8 @@ If no row matches, the Condition has no estimate ("no planning standard", DR-08)
 | R-11 | **Replay reading of PRD §4C.3.** Evidence is replayed in Event-date order, with reversing claims last on the same date. A blocked interval keeps the progress credited so far; a block reported after Done reopens the step to In progress; "reopened" resets to Not started. | Read literally, "advancing applies only if dated after the latest reversing claim" would erase Energy Group's progress once its block ends, which contradicts PRD §4E ("Blocked: as In progress") and test 7. Same-date ordering keeps "reversing wins". |
 | R-12 | A pilot with a plan and at least one reading shows as In progress. | Display only. DR-02 times the pilot by its evaluation date, and readings before it change nothing. |
 | R-13 | A new seed version replaces the browser's stored data on the next visit. | A release that changes the baseline (R-9) must not leave an old copy in someone's browser. |
+| R-14 | **"Planning standard changed" is detected per deal.** A deal gets this bridge cause when it is now timed by a standard the baseline run did not use while the baseline used another version of the same standard, or by a standard that took effect after the baseline. An engine change is reported separately as "engine changed". | Test 45 compares two runs on the same date (Mar 1), so a date-window check finds nothing. The run snapshot records the versions used (DR-01), which is what the cause should rest on. |
+| R-15 | **A waiver applies only to an open step**, and a new planning standard can take effect today or later, never earlier. | A waiver on a step already Done changes nothing; a retroactive standard would rewrite stored history. |
 
 ### Converted figures (R-9)
 
@@ -134,5 +136,8 @@ Every dollar figure in the spec is a sum of named deals, so each converts by re-
 | Downside exposure (Energy Group) | $2.5M | $12.5M |
 | Recoverable (National Bank, Savings Bank) | $5.0M | $21.0M |
 | Ready, not committed (Global Telecom) | $3.0M | $15.0M |
+| Test 45: Conservative / Core / Stretch | $3.5M / $5.5M / $11.5M | $3.5M / $13.5M / $29.5M |
+| Test 45: Manager commitment | $10.5M | $38.5M |
+| Test 45: Slipped (Energy Group) | −$2.5M | −$12.5M |
 
 Each numbered test's dollar values are converted the same way when its phase is built, and the traceability matrix records the converted value next to the spec value. BT-1 is synthetic and is not rescaled.

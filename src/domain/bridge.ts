@@ -84,7 +84,25 @@ const CRM_FIELDS = ["tcv", "arr", "term_months", "non_recurring", "status", "sta
 const inWindow = (d: IsoDate, from: IsoDate, to: IsoDate) => compareDates(d, from) > 0 && compareDates(d, to) <= 0;
 
 /** Every cause since the earlier run, in PRD §4J order; "time passing" when there is none. */
-export function causesFor(oppId: string, from: IsoDate, to: IsoDate, engineChanged: boolean, data: CauseData): string[] {
+/**
+ * True when the deal is now timed by a planning standard the baseline run did not use, where the baseline
+ * used another version of the same standard, or the standard took effect after the baseline (DR-01).
+ */
+export function standardChangedFor(line: ForecastLine | undefined, baseline: ForecastRun, standards: readonly PlanningStandard[]): boolean {
+  if (!line) return false;
+  const snap = (baseline.configSnapshot as { planningStandards?: { id: string }[] }).planningStandards;
+  const usedBefore = new Set((snap ?? []).map((x) => x.id));
+  const key = (p: PlanningStandard) => `${p.conditionType}|${p.dealType}|${p.segment ?? ""}`;
+  const keysBefore = new Set(standards.filter((p) => usedBefore.has(p.id)).map(key));
+  return line.view.timing.steps.some((st) => {
+    const p = st.standardId ? standards.find((x) => x.id === st.standardId) : undefined;
+    if (!p) return false;
+    if (compareDates(p.effectiveFrom, baseline.asOfDate) > 0) return true;
+    return snap !== undefined && !usedBefore.has(p.id) && keysBefore.has(key(p));
+  });
+}
+
+export function causesFor(oppId: string, from: IsoDate, to: IsoDate, engineChanged: boolean, data: CauseData, standardChanged = false): string[] {
   const out: string[] = [];
   if (data.changeLog.some((c) => c.entityId === oppId && CRM_FIELDS.includes(c.field) && inWindow(c.at, from, to))) out.push("CRM change");
   const dealEvidence = data.evidence.filter((e) => e.opportunityId === oppId);
@@ -94,7 +112,8 @@ export function causesFor(oppId: string, from: IsoDate, to: IsoDate, engineChang
   const decided = data.evidenceDecisions.some((d) => evIds.has(d.evidenceId) && inWindow(d.at, from, to));
   if (newEvidence || decided) out.push("Evidence applied, approved or rejected");
   if (data.pilotReadings.some((r) => r.opportunityId === oppId && inWindow(r.weekEnding, from, to))) out.push("Pilot reading added");
-  if (engineChanged || data.planningStandards.some((p) => inWindow(p.effectiveFrom, from, to))) out.push("planning standard or engine changed");
+  if (standardChanged) out.push("planning standard changed");
+  if (engineChanged) out.push("engine changed");
   return out.length ? out : ["time passing with no new progress Evidence"];
 }
 
@@ -129,7 +148,7 @@ export function computeBridge(
       amount: amount as Cents,
       from: b?.group ?? null,
       to: n?.group ?? "excluded",
-      causes: causesFor(id, baseline.asOfDate, asOf, engineChanged, causeData),
+      causes: causesFor(id, baseline.asOfDate, asOf, engineChanged, causeData, standardChangedFor(n, baseline, causeData.planningStandards)),
     });
 
     // Team scope: a change of manager is a transfer, whatever else happened (DR-14).
