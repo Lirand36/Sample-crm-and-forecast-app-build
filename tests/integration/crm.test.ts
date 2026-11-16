@@ -33,7 +33,7 @@ beforeEach(async () => {
 describe("Opportunity edits (Part IV, DR-04, DR-13)", () => {
   it("seeds revenue that adds up: ARR × term + non-recurring = the PRD §8 TCV", async () => {
     const nb = (await store.repos.opportunities.get("opp-natbank"))!;
-    expect([nb.arr, nb.termMonths, nb.nonRecurring, nb.tcv]).toEqual([usdM(1.2), 36, usdM(0.4), usdM(4.0)]);
+    expect([nb.arr, nb.termMonths, nb.nonRecurring, nb.tcv]).toEqual([usdM(6.0), 36, usdM(2.0), usdM(20.0)]);
   });
 
   it("lets the deal's Sales Manager change revenue; TCV is recomputed and logged with author and time (test 12 setup)", async () => {

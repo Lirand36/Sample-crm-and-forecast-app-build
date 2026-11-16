@@ -111,3 +111,28 @@ If no row matches, the Condition has no estimate ("no planning standard", DR-08)
 | R-6 | Archive stays, as a quiet link at the bottom of the deal page with an explanation and a required reason. | Part IV forbids deletion, and DR-14's bridge needs a "Removed" line for deals taken out of the pipeline (C-3). |
 | R-7 | Reset stays, as "Restore baseline data" under Settings > Administration, with a confirm step. | Part VII and the Definition of Done require a one-click reset so every walkthrough starts from the same numbers. |
 | R-8 | Open: DR-15 requires the backtest to be labelled synthetic. Not built yet (Phase 9); needs Liran's call against R-5. | Spec conflict. |
+| R-9 | **Big Deals rescaled ×5 (Liran's decision, Nov 16).** Insurance Group $10.0M, Energy Group $12.5M (was $15.0M before its TCV change), Global Telecom $15.0M, National Bank $20.0M. Land and Expand deals are unchanged ($1.0M to $2.5M). Targets: company $46.0M, Manager A $23.0M, Manager B $23.0M. | Big Deals should look big next to pilots. The engine has no dollar thresholds, so every group, date and reason in the spec is unchanged; only dollar figures move. The targets keep each story true: Core plus National Bank equals the company target, as in the PRD's "$4M returns and we are on target", and each manager's gap is preserved. See "Converted figures" below. |
+| R-10 | **Path to signature is a read-only checklist.** A step is ticked when its replayed state is Done (or waived). Nobody ticks by hand. Each row shows the state, the date and the latest Evidence summary. | PRD §4C: state is replayed from accepted Evidence and nothing else writes it. A manual tick would be the CRM guesswork the product replaces. |
+| R-11 | **Replay reading of PRD §4C.3.** Evidence is replayed in Event-date order, with reversing claims last on the same date. A blocked interval keeps the progress credited so far; a block reported after Done reopens the step to In progress; "reopened" resets to Not started. | Read literally, "advancing applies only if dated after the latest reversing claim" would erase Energy Group's progress once its block ends, which contradicts PRD §4E ("Blocked: as In progress") and test 7. Same-date ordering keeps "reversing wins". |
+| R-12 | A pilot with a plan and at least one reading shows as In progress. | Display only. DR-02 times the pilot by its evaluation date, and readings before it change nothing. |
+| R-13 | A new seed version replaces the browser's stored data on the next visit. | A release that changes the baseline (R-9) must not leave an old copy in someone's browser. |
+
+### Converted figures (R-9)
+
+Every dollar figure in the spec is a sum of named deals, so each converts by re-summing with the new amounts. The headline figures as of March 1:
+
+| Figure | Spec | Now |
+|---|---|---|
+| Conservative / Core / Stretch | $5.5M / $8.0M / $11.5M | $13.5M / $26.0M / $29.5M |
+| Company target | $12.0M | $46.0M |
+| Manager commitment | $13.0M | $51.0M |
+| Feb 22 run, Core | $17.3M | $65.3M |
+| Bridge: Slipped (National Bank) | −$4.0M | −$20.0M |
+| Bridge: Commitment lost (Global Telecom) | −$3.0M | −$15.0M |
+| Bridge: Lost (City Transit) | −$1.8M | −$1.8M |
+| Bridge: TCV change (Energy Group) | −$0.5M | −$2.5M |
+| Downside exposure (Energy Group) | $2.5M | $12.5M |
+| Recoverable (National Bank, Savings Bank) | $5.0M | $21.0M |
+| Ready, not committed (Global Telecom) | $3.0M | $15.0M |
+
+Each numbered test's dollar values are converted the same way when its phase is built, and the traceability matrix records the converted value next to the spec value. BT-1 is synthetic and is not rescaled.

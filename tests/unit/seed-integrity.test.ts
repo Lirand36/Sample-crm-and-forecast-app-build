@@ -20,11 +20,20 @@ describe("canonical seed (PRD §8 as changed by handoff Part VII)", () => {
     expect(travel).toMatchObject({ dealType: "payg", status: "open", tcv: null, templateVariant: "none", managerId: "u-mgr-a" });
   });
 
+  it("keeps Big Deals in proportion: each is at least $10M and larger than every other deal (R-9)", () => {
+    const big = seed.opportunities.filter((o) => o.dealType === "major_accounts").map((o) => o.tcv ?? 0);
+    const rest = seed.opportunities.filter((o) => o.dealType !== "major_accounts").map((o) => o.tcv ?? 0);
+    expect(Math.min(...big)).toBeGreaterThanOrEqual(usdM(10));
+    expect(Math.min(...big)).toBeGreaterThan(Math.max(...rest));
+    const targets = seed.quarterTargets.map((t) => t.target);
+    expect(targets).toEqual(expect.arrayContaining([usdM(46), usdM(23), usdM(23)]));
+  });
+
   it("matches the PRD §8 TCVs, statuses and managers", () => {
     const expected: Record<string, [number, string, string]> = {
       iberia: [2.0, "won", "u-mgr-a"], citytransit: [1.8, "lost", "u-mgr-b"], retail: [1.5, "open", "u-mgr-a"],
-      insurance: [2.0, "open", "u-mgr-b"], energy: [2.5, "open", "u-mgr-b"], airline: [2.5, "open", "u-mgr-a"],
-      savings: [1.0, "open", "u-mgr-a"], telecom: [3.0, "open", "u-mgr-b"], natbank: [4.0, "open", "u-mgr-a"],
+      insurance: [10.0, "open", "u-mgr-b"], energy: [12.5, "open", "u-mgr-b"], airline: [2.5, "open", "u-mgr-a"],
+      savings: [1.0, "open", "u-mgr-a"], telecom: [15.0, "open", "u-mgr-b"], natbank: [20.0, "open", "u-mgr-a"],
     };
     for (const [k, [tcv, status, mgr]] of Object.entries(expected)) {
       const o = seed.opportunities.find((x) => x.id === `opp-${k}`)!;
@@ -170,9 +179,9 @@ describe("canonical seed (PRD §8 as changed by handoff Part VII)", () => {
     expect(seed.disputes.find((d) => d.direction === "out")?.outCondition).toBe("procurement_legal");
   });
 
-  it("stores the Feb 22 run with Core $17.3M (PRD §8)", () => {
+  it("stores the Feb 22 run with Core $65.3M (PRD §8, Big Deals rescaled R-9)", () => {
     const run = seed.forecastRuns.find((r) => r.asOfDate === "2027-02-22")!;
-    expect(run.totals.core).toBe(usdM(17.3));
+    expect(run.totals.core).toBe(usdM(65.3));
     expect(run.isFixture).toBe(true);
     expect(seed.runLines.some((l) => l.opportunityId === "opp-savings")).toBe(false);
   });

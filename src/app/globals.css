@@ -8,6 +8,7 @@
   /* System figures and manager figures never share a colour (PRD §6). */
   --manager: #8a4b08;
   --danger: #a32020;
+  --ok: #2e7d4f;
 }
 
 * {
@@ -522,4 +523,87 @@ tr.archived td {
   display: flex;
   gap: 8px;
   margin-top: 16px;
+}
+
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-width: 780px;
+}
+
+.check-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.check-row:last-child {
+  border-bottom: none;
+}
+
+.tick {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 2px solid #b9b8b1;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tick.ticked {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+.check-title {
+  font-weight: 600;
+}
+
+.check-row.done .check-title {
+  color: var(--muted);
+}
+
+.check-status {
+  font-size: 13px;
+}
+
+.check-row.done .check-status {
+  color: var(--ok);
+}
+
+.check-row.blocked .check-status {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.check-row.progress .check-status {
+  color: var(--accent);
+}
+
+.check-row.todo .check-status {
+  color: var(--muted);
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0 8px;
+}
+
+.section-head h2 {
+  margin: 0;
 }

@@ -12,7 +12,11 @@ interface NavItem {
   label: string;
 }
 
-const CRM_NAV: NavItem[] = [{ href: "/crm/opportunities", label: "Opportunities" }];
+const CRM_NAV: NavItem[] = [
+  { href: "/crm/opportunities", label: "Opportunities" },
+  { href: "/crm/accounts", label: "Accounts" },
+  { href: "/crm/contacts", label: "Contacts" },
+];
 const APPS_NAV: NavItem[] = [{ href: "/forecast", label: "Forecast" }];
 const ADMIN_NAV: NavItem[] = [{ href: "/admin", label: "Administration" }];
 
@@ -39,8 +43,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           {PRODUCT_NAME}
         </Link>
         <div className="topbar-right">
-          <span className="today" title="The date the forecast is computed for.">
-            {formatDisplayDate(session.asOfDate)}
+          <span className="today" title="The app runs on a fixed calendar so every walkthrough shows the same numbers. Q1 2027 ends on March 31.">
+            Today: {formatDisplayDate(session.asOfDate)}
           </span>
           <label className="role">
             <span className="muted small">Signed in as</span>

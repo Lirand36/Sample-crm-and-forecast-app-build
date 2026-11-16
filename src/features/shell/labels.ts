@@ -1,4 +1,4 @@
-import type { User, UserRole } from "@/domain/entities";
+import type { ContactRole, User, UserRole } from "@/domain/entities";
 
 export const PRODUCT_NAME = "Demo Wonderful CRM";
 
@@ -17,3 +17,13 @@ export function userLabel(user: User): string {
 
 /** How an Event entered the system (D-09). Never "live": no live integration exists. */
 export const SOURCE_LABEL = { seeded: "Imported", manual: "Manual import", live: "Live" } as const;
+
+export const CONTACT_ROLE_LABEL: Record<ContactRole, string> = {
+  sponsor: "Executive sponsor",
+  budget_holder: "Budget holder",
+  technical: "Technical lead",
+  security: "Security",
+  legal: "Legal",
+  procurement: "Procurement",
+  other: "Other",
+};

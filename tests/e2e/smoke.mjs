@@ -30,7 +30,7 @@ check("Big Deal naming, no Major Accounts", bodyText.includes("Big Deal") && !bo
 await page.getByRole("link", { name: "Forecast", exact: true }).click();
 await page.getByRole("heading", { name: "Forecast", exact: true }).waitFor();
 const runRow = page.locator("tbody tr").first();
-check("Forecast app opens from the menu; Feb 22 run shows Core $17.3M", (await runRow.innerText()).includes("$17.3M"), await runRow.innerText());
+check("Forecast app opens from the menu; Feb 22 run shows Core $65.3M", (await runRow.innerText()).includes("$65.3M"), await runRow.innerText());
 
 await page.getByRole("link", { name: "Opportunities", exact: true }).click();
 await page.getByRole("heading", { level: 1, name: /Opportunities/ }).waitFor();
@@ -48,7 +48,7 @@ await role.selectOption("u-mgr-b");
 await page.getByRole("link", { name: "Retail Enterprise — Wonderful platform" }).click();
 await page.getByRole("heading", { level: 1, name: /Retail Enterprise/ }).waitFor();
 check("Opportunity detail lists its activity", (await page.locator("h2", { hasText: "Activity" }).innerText()).includes("(8)"));
-check("Path to signature explained", (await page.locator(".path li").count()) === 7);
+check("Path to signature explained", (await page.locator(".checklist li").count()) === 7);
 await page.getByRole("button", { name: "Edit" }).click();
 check("another manager cannot edit revenue (DR-04)", await page.getByLabel("ARR").isDisabled());
 await page.getByRole("button", { name: "Cancel" }).click();
@@ -76,7 +76,7 @@ await page.getByRole("button", { name: "Create opportunity" }).click();
 await page.getByRole("heading", { level: 1, name: /Iberia expansion/ }).waitFor();
 const det = await page.locator(".details").first().innerText();
 check("Land and Expand on an Account with a prior win is an expansion (DR-07)", det.includes("expansion of an existing customer"), det.replace(/\s+/g, " "));
-check("expansion has six steps, no pilot", (await page.locator(".path li").count()) === 6);
+check("expansion has six steps, no pilot", (await page.locator(".checklist li").count()) === 6);
 
 await page.getByRole("button", { name: "Archive this opportunity…" }).click();
 await page.getByRole("button", { name: "Archive opportunity" }).click();
@@ -85,6 +85,44 @@ await page.getByLabel("Reason").fill("Created by mistake");
 await page.getByRole("button", { name: "Archive opportunity" }).click();
 await page.locator(".badge", { hasText: "Archived" }).first().waitFor();
 check("archived opportunity is kept and badged", (await page.locator("h1").innerText()).includes("Archived"));
+
+// Accounts and Contacts
+await page.getByRole("link", { name: "Accounts", exact: true }).click();
+await page.getByRole("heading", { level: 1, name: "Accounts" }).waitFor();
+check("Accounts list shows the ten accounts", (await page.locator("tbody tr").count()) === 10);
+await page.getByRole("link", { name: "New account" }).click();
+await page.getByLabel("Name", { exact: true }).fill("Harbour Ports");
+await page.getByLabel("Segment").fill("Logistics");
+await page.getByLabel("Market").fill("Italy");
+await page.getByLabel("Owner (account executive)").fill("Lucía Moreno");
+await page.getByLabel("Email domains").fill("harbourports.example");
+await page.getByRole("button", { name: "Create account" }).click();
+await page.getByRole("heading", { level: 1, name: /Harbour Ports/ }).waitFor();
+check("account created and opened", (await page.locator(".subtitle").innerText()).includes("Logistics · Italy"));
+await page.getByRole("link", { name: "Add contact" }).click();
+await page.getByLabel("Name", { exact: true }).fill("Paola Ricci");
+await page.getByLabel("Title").fill("Head of Procurement");
+await page.getByLabel("Email").fill("p.ricci@harbourports.example");
+await page.getByRole("combobox", { name: /^Role on the deal/ }).selectOption("procurement");
+await page.getByRole("button", { name: "Create contact" }).click();
+await page.getByRole("heading", { level: 1, name: /Harbour Ports/ }).waitFor();
+check("contact added from the account page appears on it", (await page.locator("tbody", { hasText: "Paola Ricci" }).count()) === 1);
+await page.getByRole("link", { name: "Contacts", exact: true }).first().click();
+await page.getByRole("heading", { level: 1, name: "Contacts" }).waitFor();
+await page.getByRole("link", { name: "Paola Ricci" }).click();
+await page.getByRole("button", { name: "Edit" }).click();
+await page.getByLabel("Title").fill("Chief Procurement Officer");
+await page.getByRole("button", { name: "Save changes" }).click();
+await page.getByText("Chief Procurement Officer").first().waitFor();
+check("contact edit is logged", /title\s+Head of Procurement\s+Chief Procurement Officer/.test(await page.locator("table").last().innerText()));
+
+// Path to signature checklist on National Bank
+await page.goto(`${base}/crm/opportunities/opp-natbank`);
+await page.locator(".checklist li").first().waitFor();
+const path = await page.locator(".checklist").innerText();
+check("National Bank: security blocked until Mar 16", path.includes("Blocked until Mar 16, 2027"), path.replace(/\s+/g, " ").slice(0, 200));
+check("National Bank: 5 of 7 steps ticked", (await page.locator(".tick.ticked").count()) === 5);
+check("Big Deal National Bank is $20M", (await page.locator(".details.revenue").innerText()).includes("$20,000,000"));
 
 await page.getByRole("link", { name: "Administration" }).click();
 await page.getByTestId("reset-start").click();

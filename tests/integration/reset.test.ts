@@ -19,6 +19,15 @@ describe.each(STORE_FACTORIES)("one-click reset is reproducible: %s", (_name, ma
     expect(await storeHash(store)).toBe(datasetHash(buildCanonicalSeed()));
   });
 
+  it("reloads the baseline when the browser holds an older seed version", async () => {
+    const store = await make();
+    await ensureSeeded(store, buildCanonicalSeed());
+    const session = (await store.repos.session.get("session"))!;
+    await store.repos.session.put({ ...session, seedVersion: "seed-old" });
+    expect(await ensureSeeded(store, buildCanonicalSeed())).toBe(true);
+    expect(await storeHash(store)).toBe(datasetHash(buildCanonicalSeed()));
+  });
+
   it("restores the exact seed after edits, appends and role changes", async () => {
     const store = await make();
     await resetToSeed(store, buildCanonicalSeed());

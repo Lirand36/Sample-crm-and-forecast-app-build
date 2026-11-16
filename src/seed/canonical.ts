@@ -35,7 +35,7 @@ import { eventContentHash } from "@/domain/hash";
 import { usdM, type Cents } from "@/domain/money";
 import { CONDITION_TEMPLATES } from "./templates";
 
-export const SEED_VERSION = "seed-2027Q1-v1";
+export const SEED_VERSION = "seed-2027Q1-v2";
 export const DEMO_AS_OF = isoDate("2027-03-01");
 export const QUARTER_ID = "2027-Q1";
 export const EXTRACTION_VERSION = "fixture-extraction-v1";
@@ -232,12 +232,12 @@ export const OPPORTUNITIES: Opportunity[] = [
   opp("iberia", { dealType: "land_and_expand", templateVariant: "land", status: "won", managerId: MGR_A, tcvM: 2.0, createdAt: "2026-11-02", signedDate: d("2027-02-12"), closeDate: d("2027-02-12"), stage: "Closed won" }),
   opp("citytransit", { dealType: "land_and_expand", templateVariant: "land", status: "lost", managerId: MGR_B, tcvM: 1.8, createdAt: "2026-11-09", statusReason: "Customer chose a competitor at signature", closeDate: d("2027-03-15"), stage: "Closed lost" }),
   opp("retail", { dealType: "land_and_expand", templateVariant: "land", status: "open", managerId: MGR_A, tcvM: 1.5, createdAt: "2026-12-01", closeDate: d("2027-03-20"), stage: "Contract" }),
-  opp("insurance", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_B, tcvM: 2.0, createdAt: "2026-11-25", closeDate: d("2027-03-25"), stage: "Contract" }),
-  opp("energy", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_B, tcvM: 2.5, createdAt: "2026-12-03", closeDate: d("2027-03-15"), stage: "Contract" }),
+  opp("insurance", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_B, tcvM: 10.0, createdAt: "2026-11-25", closeDate: d("2027-03-25"), stage: "Contract" }),
+  opp("energy", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_B, tcvM: 12.5, createdAt: "2026-12-03", closeDate: d("2027-03-15"), stage: "Contract" }),
   opp("airline", { dealType: "land_and_expand", templateVariant: "land", status: "open", managerId: MGR_A, tcvM: 2.5, createdAt: "2026-12-10", closeDate: d("2027-03-28"), stage: "Pilot" }),
   opp("savings", { dealType: "land_and_expand", templateVariant: "land", status: "open", managerId: MGR_A, tcvM: 1.0, createdAt: "2027-02-23", closeDate: d("2027-03-31"), stage: "Security review" }),
-  opp("telecom", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_B, tcvM: 3.0, createdAt: "2026-11-30", closeDate: d("2027-03-31"), stage: "Contract" }),
-  opp("natbank", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_A, tcvM: 4.0, createdAt: "2026-11-20", closeDate: d("2027-03-31"), stage: "Security review" }),
+  opp("telecom", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_B, tcvM: 15.0, createdAt: "2026-11-30", closeDate: d("2027-03-31"), stage: "Contract" }),
+  opp("natbank", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_A, tcvM: 20.0, createdAt: "2026-11-20", closeDate: d("2027-03-31"), stage: "Security review" }),
   opp("travel", { dealType: "payg", templateVariant: "none", status: "open", managerId: MGR_A, tcvM: null, createdAt: "2027-02-01", closeDate: d("2027-03-31"), stage: "Contract" }),
 ];
 
@@ -258,9 +258,9 @@ export const QUARTERS: Quarter[] = [
 ];
 
 export const QUARTER_TARGETS: QuarterTarget[] = [
-  { id: "tgt-2027-Q1-company", quarterId: QUARTER_ID, managerId: null, target: usdM(12.0) },
-  { id: "tgt-2027-Q1-mgr-a", quarterId: QUARTER_ID, managerId: MGR_A, target: usdM(7.0) },
-  { id: "tgt-2027-Q1-mgr-b", quarterId: QUARTER_ID, managerId: MGR_B, target: usdM(5.0) },
+  { id: "tgt-2027-Q1-company", quarterId: QUARTER_ID, managerId: null, target: usdM(46.0) },
+  { id: "tgt-2027-Q1-mgr-a", quarterId: QUARTER_ID, managerId: MGR_A, target: usdM(23.0) },
+  { id: "tgt-2027-Q1-mgr-b", quarterId: QUARTER_ID, managerId: MGR_B, target: usdM(23.0) },
 ];
 
 // ---------- Planning standards v1 (Part VII) ----------
@@ -761,10 +761,10 @@ interface FixtureLine {
 const FEB22_LINES: FixtureLine[] = [
   { deal: "iberia", managerId: MGR_A, tcvM: 2.0, group: "signed", eligibility: "signed" },
   { deal: "retail", managerId: MGR_A, tcvM: 1.5, group: "firm", eligibility: "evaluated" },
-  { deal: "insurance", managerId: MGR_B, tcvM: 2.0, group: "core", eligibility: "evaluated" },
-  { deal: "energy", managerId: MGR_B, tcvM: 3.0, group: "core", eligibility: "evaluated" },
-  { deal: "telecom", managerId: MGR_B, tcvM: 3.0, group: "core", eligibility: "evaluated" },
-  { deal: "natbank", managerId: MGR_A, tcvM: 4.0, group: "core", eligibility: "evaluated" },
+  { deal: "insurance", managerId: MGR_B, tcvM: 10.0, group: "core", eligibility: "evaluated" },
+  { deal: "energy", managerId: MGR_B, tcvM: 15.0, group: "core", eligibility: "evaluated" },
+  { deal: "telecom", managerId: MGR_B, tcvM: 15.0, group: "core", eligibility: "evaluated" },
+  { deal: "natbank", managerId: MGR_A, tcvM: 20.0, group: "core", eligibility: "evaluated" },
   { deal: "citytransit", managerId: MGR_B, tcvM: 1.8, group: "core", eligibility: "evaluated" },
   { deal: "airline", managerId: MGR_A, tcvM: 2.5, group: "stretch", eligibility: "evaluated" },
   { deal: "travel", managerId: MGR_A, tcvM: null, group: "excluded", eligibility: "excluded", exclusionReason: "PAYG — not forecast" },
@@ -797,7 +797,7 @@ function buildFeb22Run(seq: number): { run: ForecastRun; lines: RunLine[] } {
       })),
       note: "Seeded stored run (PRD §8). Values are given, not recomputed.",
     },
-    totals: totalsFor(FEB22_LINES, 2.0),
+    totals: totalsFor(FEB22_LINES, 10.0),
     managerTotals: {
       [MGR_A]: totalsFor(FEB22_LINES.filter((l) => l.managerId === MGR_A), 0),
       [MGR_B]: totalsFor(FEB22_LINES.filter((l) => l.managerId === MGR_B), 2.0),
@@ -837,9 +837,9 @@ export function buildCanonicalSeed(): Dataset {
     change("chg-iberia-stage", "opp-iberia", "stage", "Contract", "Closed won", MGR_A, "2027-02-12", seq++),
     change("chg-iberia-status", "opp-iberia", "status", "open", "won", MGR_A, "2027-02-12", seq++),
     change("chg-iberia-signed", "opp-iberia", "signed_date", null, "2027-02-12", MGR_A, "2027-02-12", seq++),
-    change("chg-energy-arr", "opp-energy", "arr", String(revenue(3.0).arr), String(revenue(2.5).arr), MGR_B, "2027-02-23", seq++),
-    change("chg-energy-nrr", "opp-energy", "non_recurring", String(revenue(3.0).nonRecurring), String(revenue(2.5).nonRecurring), MGR_B, "2027-02-23", seq++),
-    change("chg-energy-tcv", "opp-energy", "tcv", String(usdM(3.0)), String(usdM(2.5)), MGR_B, "2027-02-23", seq++),
+    change("chg-energy-arr", "opp-energy", "arr", String(revenue(15.0).arr), String(revenue(12.5).arr), MGR_B, "2027-02-23", seq++),
+    change("chg-energy-nrr", "opp-energy", "non_recurring", String(revenue(15.0).nonRecurring), String(revenue(12.5).nonRecurring), MGR_B, "2027-02-23", seq++),
+    change("chg-energy-tcv", "opp-energy", "tcv", String(usdM(15.0)), String(usdM(12.5)), MGR_B, "2027-02-23", seq++),
     change("chg-citytransit-stage", "opp-citytransit", "stage", "Contract", "Closed lost", MGR_B, "2027-02-25", seq++),
     change("chg-citytransit-status", "opp-citytransit", "status", "open", "lost", MGR_B, "2027-02-25", seq++),
   ];

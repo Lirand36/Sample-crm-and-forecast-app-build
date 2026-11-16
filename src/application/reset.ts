@@ -9,10 +9,13 @@ export async function resetToSeed(store: DataStore, seed: Dataset): Promise<void
   await store.load(seed);
 }
 
-/** Load the seed only if the store is empty (first visit in this browser). Returns true if seeded. */
+/**
+ * Load the seed if the store is empty (first visit in this browser), or if it holds data from an older
+ * seed version, since a new release can change the baseline itself. Returns true if seeded.
+ */
 export async function ensureSeeded(store: DataStore, seed: Dataset): Promise<boolean> {
   const session = await store.repos.session.get("session");
-  if (session) return false;
+  if (session && session.seedVersion === seed.session[0]?.seedVersion) return false;
   await resetToSeed(store, seed);
   return true;
 }

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { archiveOpportunity, changeLogFor, updateOpportunity } from "@/application/crm";
+import { signaturePathFor, type PathStep } from "@/application/signature-path";
 import { canEditRestrictedFields, DEAL_TYPE_LABEL } from "@/domain/crm-rules";
 import { formatDisplayDate } from "@/domain/dates";
-import { CONDITION_LABEL, CONDITION_NUMBER, type DealEvent } from "@/domain/entities";
+import { CONDITION_LABEL, type DealEvent } from "@/domain/entities";
 import { formatUsd } from "@/domain/money";
 import { ChangeHistory, FormError, useStoreQuery } from "@/features/crm/ui";
 import { OpportunityForm } from "@/features/crm/OpportunityForm";
@@ -35,27 +36,24 @@ export default function OpportunityDetailPage() {
     async (s) => {
       const opportunity = await s.repos.opportunities.get(id);
       if (!opportunity) return { opportunity: undefined } as const;
-      const [account, accounts, users, events, conditions, templates, history] = await Promise.all([
+      const [account, accounts, users, events, path, history] = await Promise.all([
         s.repos.accounts.get(opportunity.accountId),
         s.repos.accounts.list(),
         s.repos.users.list(),
         s.repos.events.list(),
-        s.repos.dealConditions.list(),
-        s.repos.conditionTemplates.list(),
+        signaturePathFor(s, id),
         changeLogFor(s, id),
       ]);
-      const template = templates.find((t) => t.variant === opportunity.templateVariant && t.version === opportunity.templateVersion);
       return {
         opportunity,
         account,
         accounts,
         users,
         history,
-        links: template?.links ?? [],
         events: events
           .filter((e) => e.opportunityId === id)
           .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : a.occurredAt > b.occurredAt ? -1 : b.seq - a.seq)),
-        conditions: conditions.filter((c) => c.opportunityId === id).sort((a, b) => CONDITION_NUMBER[a.type] - CONDITION_NUMBER[b.type]),
+        path,
       };
     },
     [id],
@@ -128,7 +126,7 @@ export default function OpportunityDetailPage() {
       ) : (
         <div className="two-col">
           <dl className="details">
-            <div><dt>Account</dt><dd>{data.account?.name} <span className="muted small">· {data.account?.segment}, {data.account?.market}</span></dd></div>
+            <div><dt>Account</dt><dd>{data.account ? <Link href={`/crm/accounts/${data.account.id}`}>{data.account.name}</Link> : "—"} <span className="muted small">· {data.account?.segment}, {data.account?.market}</span></dd></div>
             <div><dt>Deal type</dt><dd>{DEAL_TYPE_LABEL[o.dealType]}{o.templateVariant === "expand" ? <span className="muted small"> · expansion of an existing customer</span> : null}</dd></div>
             <div><dt>Stage</dt><dd>{o.stage}{o.statusReason ? <span className="muted small"> · {o.statusReason}</span> : null}</dd></div>
             <div><dt>{o.signedDate ? "Signed" : "Close date"}</dt><dd>{o.signedDate ? formatDisplayDate(o.signedDate) : o.closeDate ? formatDisplayDate(o.closeDate) : "—"}</dd></div>
@@ -145,29 +143,24 @@ export default function OpportunityDetailPage() {
         </div>
       )}
 
-      <h2>Path to signature</h2>
-      {data.conditions.length ? (
+      <h2>
+        Path to signature
+        {data.path.length ? (
+          <span className="muted small"> · {data.path.filter((p) => p.state.state === "done" || p.state.state === "waived").length} of {data.path.length} done</span>
+        ) : null}
+      </h2>
+      {data.path.length ? (
         <>
           <p className="muted section-intro">
-            What has to happen on the customer&apos;s side before this contract can be signed. The Forecast app tracks each
-            step from the activity below and works out whether the deal can sign this quarter.
+            The steps the customer has to complete before this contract can be signed. A step is ticked when the customer&apos;s
+            own emails or documents show it is complete and a manager has approved that reading in the Forecast app. Nobody
+            ticks a step by hand, and our own notes never tick one.
           </p>
-          <ol className="path">
-            {data.conditions.map((c) => {
-              const waits = data.links.filter((l) => l.to === c.type);
-              return (
-                <li key={c.id} value={CONDITION_NUMBER[c.type]}>
-                  <span className="path-step">{CONDITION_LABEL[c.type]}</span>
-                  <span className="muted small">
-                    {" "}· {c.owner}
-                    {waits.length
-                      ? ` · after ${waits.map((l) => `${CONDITION_LABEL[l.from].toLowerCase()}${l.strength === "soft" ? " (can run in parallel)" : ""}`).join(", ")}`
-                      : ""}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+          <ul className="checklist">
+            {data.path.map((p) => (
+              <PathRow key={p.type} step={p} />
+            ))}
+          </ul>
         </>
       ) : (
         <p className="muted section-intro">Pay-as-you-go deals commit no fixed value, so they have no signature path and are not forecast.</p>
@@ -245,5 +238,43 @@ export default function OpportunityDetailPage() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+const GRADE_TEXT = { direct: "in a signed or official document", stated: "as stated by the customer", asserted: "claimed by us" } as const;
+
+function stepStatus(p: PathStep): { label: string; tone: string } {
+  const s = p.state;
+  switch (s.state) {
+    case "done":
+      return { label: `Done ${s.doneOn ? formatDisplayDate(s.doneOn) : ""}${s.doneGrade ? `, ${GRADE_TEXT[s.doneGrade]}` : ""}`, tone: "done" };
+    case "waived":
+      return { label: `Not required: ${s.waiverReason ?? ""}`, tone: "done" };
+    case "blocked":
+      return {
+        label: s.blockedNow?.end ? `Blocked until ${formatDisplayDate(s.blockedNow.end)}` : "Blocked, no date given for when it resumes",
+        tone: "blocked",
+      };
+    case "in_progress":
+      return { label: p.latest ? `In progress, last update ${formatDisplayDate(p.latest.occurredAt)}` : "In progress", tone: "progress" };
+    default:
+      return { label: "Not started", tone: "todo" };
+  }
+}
+
+function PathRow({ step }: { step: PathStep }) {
+  const status = stepStatus(step);
+  const ticked = step.state.state === "done" || step.state.state === "waived";
+  return (
+    <li className={`check-row ${status.tone}`}>
+      <span className={ticked ? "tick ticked" : "tick"} role="checkbox" aria-checked={ticked} aria-readonly="true" aria-label={CONDITION_LABEL[step.type]}>
+        {ticked ? "✓" : ""}
+      </span>
+      <div>
+        <div className="check-title">{CONDITION_LABEL[step.type]}</div>
+        <div className="check-status">{status.label}</div>
+        {step.latest ? <div className="muted small">{step.latest.evidence.summary}</div> : null}
+      </div>
+    </li>
   );
 }

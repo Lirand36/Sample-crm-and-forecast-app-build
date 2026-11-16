@@ -94,7 +94,7 @@ export default function OpportunitiesPage() {
                   {o.archivedAt ? <span className="badge">Archived</span> : null}
                 </td>
                 <td>
-                  {account?.name}
+                  {account ? <Link href={`/crm/accounts/${account.id}`}>{account.name}</Link> : "—"}
                   <span className="muted small"> · {account?.segment}, {account?.market}</span>
                 </td>
                 <td>{DEAL_TYPE_LABEL[o.dealType]}</td>
