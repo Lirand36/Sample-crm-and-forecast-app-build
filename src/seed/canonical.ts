@@ -800,7 +800,7 @@ function buildFeb22Run(seq: number): { run: ForecastRun; lines: RunLine[] } {
     totals: totalsFor(FEB22_LINES, 10.0),
     managerTotals: {
       [MGR_A]: totalsFor(FEB22_LINES.filter((l) => l.managerId === MGR_A), 0),
-      [MGR_B]: totalsFor(FEB22_LINES.filter((l) => l.managerId === MGR_B), 2.0),
+      [MGR_B]: totalsFor(FEB22_LINES.filter((l) => l.managerId === MGR_B), 10.0),
     },
     isFixture: true,
   };

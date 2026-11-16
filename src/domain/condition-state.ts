@@ -68,6 +68,10 @@ export interface ConditionState {
   /** The interval containing the as-of date, if any. */
   blockedNow: BlockedInterval | null;
   waiverReason: string | null;
+  /** First applied Evidence date of the current span (a reopen starts a new span). */
+  spanStart: IsoDate | null;
+  /** Latest applied started or progress Evidence date in the current span. */
+  latestProgress: IsoDate | null;
   /** Evidence ids applied to state, in replay order. */
   applied: string[];
 }
@@ -111,6 +115,8 @@ export function conditionState(input: ConditionStateInput, asOf: IsoDate): Condi
     blocked: [],
     blockedNow: null,
     waiverReason: null,
+    spanStart: null,
+    latestProgress: null,
     applied: [],
   };
 
@@ -139,8 +145,14 @@ export function conditionState(input: ConditionStateInput, asOf: IsoDate): Condi
   let doneGrade: Grade | null = null;
   const intervals: BlockedInterval[] = [];
   const applied: string[] = [];
+  let spanStart: IsoDate | null = null;
+  let latestProgress: IsoDate | null = null;
 
   for (const { e, ev } of effective) {
+    if (e.claim !== "reopened" && e.claim !== "contrary" && e.claim !== "status" && e.claim !== "intent" && spanStart === null) {
+      spanStart = ev.occurredAt;
+    }
+    if (e.claim === "started" || e.claim === "progress") latestProgress = ev.occurredAt;
     if (ADVANCING_CLAIMS.includes(e.claim)) {
       if (e.claim === "done" || (e.claim === "selected" && input.type === "vendor_selection")) {
         state = "done";
@@ -162,6 +174,8 @@ export function conditionState(input: ConditionStateInput, asOf: IsoDate): Condi
       state = "not_started";
       doneOn = null;
       doneGrade = null;
+      spanStart = null;
+      latestProgress = null;
       applied.push(e.id);
     }
     // contrary opens a deal-level signal; status and intent change no state.
@@ -190,5 +204,5 @@ export function conditionState(input: ConditionStateInput, asOf: IsoDate): Condi
   const blockedNow = blocked.find((iv) => inside(asOf, iv)) ?? null;
   if (state !== "done" && blockedNow) state = "blocked";
 
-  return { ...base, state, doneOn, doneGrade, blocked, blockedNow, applied };
+  return { ...base, state, doneOn, doneGrade, blocked, blockedNow, spanStart, latestProgress, applied };
 }
