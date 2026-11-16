@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { loadBridge, loadForecast } from "@/application/forecast";
+import { submitForecast } from "@/application/runs";
+import { useStore } from "@/features/shell/StoreProvider";
 import { BRIDGE_LABEL } from "@/domain/bridge";
 import { formatDisplayDate } from "@/domain/dates";
 import { CONDITION_LABEL, type Group } from "@/domain/entities";
@@ -14,6 +16,8 @@ import { COMMITMENT_LABEL, GROUP_LABEL, READINESS_LABEL } from "@/features/shell
 const GROUP_ORDER: Group[] = ["signed", "firm", "core", "stretch", "late", "timing_unknown", "uncommitted", "excluded"];
 
 export default function ForecastHome() {
+  const { store, actingUser, refresh } = useStore();
+  const [submitted, setSubmitted] = useState<string | null>(null);
   const [baselineId, setBaselineId] = useState<string>("");
   const data = useStoreQuery(async (s) => {
     const [forecast, users, runs] = await Promise.all([loadForecast(s), s.repos.users.list(), s.repos.forecastRuns.list()]);
@@ -44,6 +48,23 @@ export default function ForecastHome() {
             {f.quarter.label} · as of {formatDisplayDate(f.asOf)} · quarter ends {formatDisplayDate(f.quarter.end)}
           </p>
         </div>
+        {actingUser.role === "sales_manager" ? (
+          <div className="actions">
+            {submitted ? <span className="muted small">{submitted}</span> : null}
+            <button
+              type="button"
+              className="btn btn-primary"
+              data-testid="submit"
+              onClick={async () => {
+                const r = await submitForecast(store);
+                setSubmitted(r.ok ? `Submitted ${formatDisplayDate(r.value.submittedAt)}. The run is frozen below.` : (Object.values(r.errors)[0] ?? "Refused."));
+                await refresh();
+              }}
+            >
+              Submit my forecast
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="number-row">

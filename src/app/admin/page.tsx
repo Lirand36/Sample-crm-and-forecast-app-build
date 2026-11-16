@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { advanceOneWeek } from "@/application/runs";
 import { formatDisplayDate } from "@/domain/dates";
+import { DEMO_AS_OF } from "@/seed/canonical";
 import { useStore } from "@/features/shell/StoreProvider";
 
 export default function AdminPage() {
-  const { reset, session } = useStore();
+  const { reset, session, store, refresh } = useStore();
+  const [moving, setMoving] = useState(false);
   const [state, setState] = useState<"idle" | "confirm" | "busy" | "done">("idle");
 
   async function restore() {
@@ -18,10 +21,35 @@ export default function AdminPage() {
     <section>
       <h1>Administration</h1>
       <div className="panel">
+        <h2>Move to next week</h2>
+        <p>
+          Today is {formatDisplayDate(session.asOfDate)}. This stores today&apos;s forecast run, moves the calendar forward seven days and
+          loads the activity that arrives in that week, such as the next weekly pilot reading. The Forecast then shows what changed
+          since this week.
+        </p>
+        <div className="form-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            data-testid="next-week"
+            disabled={moving}
+            onClick={async () => {
+              setMoving(true);
+              await advanceOneWeek(store);
+              await refresh();
+              setMoving(false);
+            }}
+          >
+            {moving ? "Moving…" : "Move to next week"}
+          </button>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: 16 }}>
         <h2>Restore baseline data</h2>
         <p>
           Puts every Account, Contact, Opportunity, activity record and forecast run back to the baseline of{" "}
-          {formatDisplayDate(session.asOfDate)}, and undoes all changes made since. Use it to start a walkthrough from a
+          {formatDisplayDate(DEMO_AS_OF)}, and undoes all changes made since. Use it to start a walkthrough from a
           known state.
         </p>
         {state === "confirm" ? (

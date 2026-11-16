@@ -163,6 +163,17 @@ await page.getByTestId("stretch").waitFor();
 // $49.5M on the baseline, plus the $0.5M Retail TCV edit made earlier in this script.
 check("test 9: Stretch rises by National Bank's $20M to $50.0M", (await page.getByTestId("stretch").innerText()) === "$50.0M", await page.getByTestId("stretch").innerText());
 
+// Submission by a Sales Manager, then Next week
+await role.selectOption("u-mgr-a");
+await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
+await page.getByTestId("submit").click();
+await page.getByText(/Submitted Mar 1, 2027/).waitFor();
+check("Sales Manager submission freezes a run", (await page.locator("table").last().innerText()).includes("Submission"));
+await page.getByRole("link", { name: "Administration" }).click();
+await page.getByTestId("next-week").click();
+await page.locator(".today", { hasText: "Mar 8, 2027" }).waitFor();
+check("Next week moves today to Mar 8", (await page.locator(".today").innerText()).includes("Mar 8, 2027"));
+
 await page.getByRole("link", { name: "Administration" }).click();
 await page.getByTestId("reset-start").click();
 await page.getByTestId("reset").click();
