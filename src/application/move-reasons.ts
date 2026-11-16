@@ -4,7 +4,7 @@ import type { Bridge } from "@/domain/bridge";
 import { evidenceStatus } from "@/domain/condition-state";
 import { compareDates, type IsoDate } from "@/domain/dates";
 import { REVERSING_CLAIMS } from "@/domain/entities";
-import { formatMillions, type Cents } from "@/domain/money";
+import { formatAmount, type Cents } from "@/domain/money";
 import type { DataStore } from "./ports";
 
 export interface MoveReason {
@@ -35,7 +35,7 @@ export async function loadMoveReasons(store: DataStore, bridge: Bridge, asOf: Is
     for (const m of line.moves) {
       const reasons: MoveReason[] = [];
       for (const c of changeLog.filter((x) => x.entityId === m.opportunityId && FIELD[x.field] && after(x.at, from, asOf))) {
-        const v = (x: string | null) => (x === null ? "—" : c.field === "tcv" ? formatMillions(Number(x) as Cents) : x);
+        const v = (x: string | null) => (x === null ? "—" : c.field === "tcv" ? formatAmount(Number(x) as Cents) : x);
         reasons.push({
           date: c.at,
           kind: "crm",

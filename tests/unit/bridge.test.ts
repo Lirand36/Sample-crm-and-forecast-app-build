@@ -31,7 +31,7 @@ describe("movement bridge from the Feb 22 run (PRD §4J, test 1 converted per R-
   });
 
   it("writes one sentence from the lines", () => {
-    expect(b.sentence).toBe("Down $39.3M: one lost, one lost commitment, one slipped and one changed value.");
+    expect(b.sentence).toBe("Down $39,300,000: one lost, one lost commitment, one slipped and one changed value.");
   });
 
   it("team scope sums to that manager's change", () => {

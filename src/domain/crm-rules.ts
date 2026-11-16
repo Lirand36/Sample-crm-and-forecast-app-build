@@ -61,14 +61,14 @@ export function validateOpportunity(opp: Opportunity, ctx: { accounts: readonly 
   if (!(STAGES as readonly string[]).includes(opp.stage)) errors.stage = "Choose a stage.";
   else if (opp.status !== statusForStage(opp.stage)) errors.stage = "Stage and status disagree.";
   const isPayg = opp.dealType === "payg";
-  if (opp.arr !== null && (!Number.isSafeInteger(opp.arr) || opp.arr < 0)) errors.arr = "ARR must be a positive amount.";
-  if (opp.nonRecurring !== null && (!Number.isSafeInteger(opp.nonRecurring) || opp.nonRecurring < 0)) errors.nonRecurring = "Non-recurring revenue cannot be negative.";
+  if (opp.arr !== null && (!Number.isSafeInteger(opp.arr) || opp.arr < 0)) errors.arr = "Min Commit must be a positive amount.";
+  if (opp.nonRecurring !== null && (!Number.isSafeInteger(opp.nonRecurring) || opp.nonRecurring < 0)) errors.nonRecurring = "Platform fee cannot be negative.";
   if (opp.termMonths !== null && (!Number.isInteger(opp.termMonths) || opp.termMonths < 1 || opp.termMonths > 120)) errors.termMonths = "Term is 1 to 120 whole months.";
   if (!isPayg) {
-    if (opp.arr === null || opp.arr <= 0) errors.arr = errors.arr ?? "ARR is required.";
+    if (opp.arr === null || opp.arr <= 0) errors.arr = errors.arr ?? "Min Commit is required.";
     if (opp.termMonths === null) errors.termMonths = errors.termMonths ?? "Term is required.";
   }
-  if (opp.tcv !== computeTcv(opp.arr, opp.termMonths, opp.nonRecurring)) errors.tcv = "TCV must equal ARR × term + non-recurring.";
+  if (opp.tcv !== computeTcv(opp.arr, opp.termMonths, opp.nonRecurring)) errors.tcv = "TCV must equal Min Commit × duration + platform fee.";
   if (!isPayg && opp.status === "open" && (opp.tcv === null || opp.tcv <= 0)) {
     errors.arr = errors.arr ?? "An open deal needs a TCV above zero (PAYG excepted).";
   }

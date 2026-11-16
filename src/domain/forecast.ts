@@ -21,6 +21,21 @@ export interface ForecastLine extends Classification {
   previewing: ConditionType | null;
 }
 
+/**
+ * The manager's forecast category, in WCP's terms. It follows the system unless a live Dispute moves the deal
+ * into Commit (Dispute In) or out of it (Dispute Out), so Managers' Commit is the TCV of every "Commit" deal.
+ */
+export type ForecastCategory = "Commit" | "Best Case" | "Pipeline" | "Omitted";
+
+export function forecastCategory(l: Pick<ForecastLine, "group" | "dispute">): ForecastCategory {
+  if (l.group === "excluded") return "Omitted";
+  const live = l.dispute?.status.live ? l.dispute.dispute.direction : null;
+  if (live === "in") return "Commit";
+  if (live === "out") return "Best Case";
+  if (["signed", "firm", "core"].includes(l.group)) return "Commit";
+  return l.group === "stretch" ? "Best Case" : "Pipeline";
+}
+
 export interface ManagerRow extends ScenarioTotals {
   managerId: string | null; // null = company
   target: Cents | null;

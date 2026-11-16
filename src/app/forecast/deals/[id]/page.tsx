@@ -10,12 +10,15 @@ import { importEmail } from "@/application/import-event";
 import { EML_FIXTURES } from "@/seed/extraction-fixtures";
 import { EML_RAW } from "@/seed/eml-raw";
 import { useStore } from "@/features/shell/StoreProvider";
-import type { ForecastLine } from "@/domain/forecast";
+import { forecastCategory, type ForecastLine } from "@/domain/forecast";
+import type { DealEvent, Evidence, Opportunity, User } from "@/domain/entities";
+import { reviewEvidence } from "@/application/evidence";
+import { allowedActions, isReviewOverdue, refusalReason, type ReviewAction } from "@/domain/evidence-review";
 import { evidenceStatus, gradeOf, type ConditionState, type EvidenceStatus } from "@/domain/condition-state";
 import { compareDates, daysBetween, formatDisplayDate, maxDate, type IsoDate } from "@/domain/dates";
 import { NEVER_WAIVED } from "@/domain/config-rules";
 import { CONDITION_LABEL, type ConditionType, type LinkStrength } from "@/domain/entities";
-import { formatMillions } from "@/domain/money";
+import { formatAmount } from "@/domain/money";
 import type { StepTiming } from "@/domain/timing";
 import { useStoreQuery } from "@/features/crm/ui";
 import { COMMITMENT_LABEL, GROUP_LABEL, READINESS_LABEL } from "@/features/shell/labels";
@@ -93,7 +96,7 @@ export default function ForecastDealPage() {
       </div>
 
       <div className="verdict">
-        <div><span className="number-label">TCV</span><strong>{o.tcv === null ? "—" : formatMillions(o.tcv)}</strong></div>
+        <div><span className="number-label">TCV</span><strong>{o.tcv === null ? "—" : formatAmount(o.tcv)}</strong></div>
         <div><span className="number-label">Group</span><span className={`group-pill g-${line.group}`}>{GROUP_LABEL[line.group]}</span></div>
         <div><span className="number-label">Commitment</span><strong>{line.commitment ? COMMITMENT_LABEL[line.commitment.level] : "—"}</strong></div>
         <div><span className="number-label">Timing</span><strong>{evaluated ? READINESS_LABEL[view.timing.readiness] : "—"}</strong></div>
@@ -106,6 +109,15 @@ export default function ForecastDealPage() {
       <p className="verdict-reason">
         {line.reasons.length ? <>Held back by {line.reasons.join("; ")}.</> : line.group === "firm" ? "Counted. Committed in writing, and fits even if slow." : null}
       </p>
+
+      <PendingReview
+        opp={o}
+        asOf={f.asOf}
+        items={data.evidence
+          .filter((e) => e.opportunityId === id)
+          .map((e) => ({ e, ev: events.get(e.eventId)!, status: evidenceStatus(e, data.evidenceDecisions) }))
+          .filter((x) => x.ev && compareDates(x.ev.occurredAt, f.asOf) <= 0 && (x.status === "waiting" || x.status === "provisional"))}
+      />
 
       {!evaluated ? null : (
         <>
@@ -183,8 +195,8 @@ export default function ForecastDealPage() {
                   </div>
                   {p ? (
                     <div className="preview-box" data-testid="preview">
-                      Preview only, nothing saved. System forecast {formatMillions(f.company.core)} → <strong>{formatMillions(p.company.core)}</strong>
-                      {f.company.target === null ? "" : ` against the ${formatMillions(f.company.target)} target`}.
+                      Preview only, nothing saved. System forecast {formatAmount(f.company.core)} → <strong>{formatAmount(p.company.core)}</strong>
+                      {f.company.target === null ? "" : ` against the ${formatAmount(f.company.target)} target`}.
                     </div>
                   ) : null}
                 </div>
@@ -194,7 +206,7 @@ export default function ForecastDealPage() {
         </>
       ) : null}
 
-      {evaluated ? <ManagerPosition line={line} qe={qe} /> : null}
+      {evaluated ? <ManagerPosition line={line} qe={qe} users={users} /> : null}
 
       <AddEmail opportunityId={o.id} accountName={view.account?.name ?? ""} />
 
@@ -303,7 +315,7 @@ function PathCalendar({ steps, asOf, qe, links }: { steps: StepTiming[]; asOf: I
   );
 }
 
-function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
+function ManagerPosition({ line, qe, users }: { line: ForecastLine; qe: IsoDate; users: readonly User[] }) {
   const { store, actingUser, refresh } = useStore();
   const o = line.view.opportunity;
   const isManager = actingUser.role === "sales_manager" && actingUser.id === o.managerId;
@@ -314,14 +326,19 @@ function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
   const [by, setBy] = useState<string>(qe);
   const [error, setError] = useState<string | null>(null);
   const d0 = line.dispute;
+  const managerName = users.find((u) => u.id === (d0?.dispute.managerId ?? o.managerId))?.name ?? "The manager";
 
   return (
     <>
-      <h2>Manager&apos;s position</h2>
+      <h2>Forecast category</h2>
+      <p className="category-line" data-testid="category">
+        Manager: <strong className="manager">{forecastCategory(line)}</strong>
+        <span className="muted"> · </span>System: <strong>{GROUP_LABEL[line.group]}</strong>
+      </p>
       {d0 ? (
         <div className={`dispute ${d0.status.live ? "" : "stale"}`} data-testid="dispute">
-          <strong>Dispute {d0.dispute.direction === "in" ? "In" : "Out"}</strong>
-          {d0.status.live ? ". Counted in Manager commitment." : `. Not counted: ${d0.status.reason}.`}
+          <strong>{managerName} moved it {d0.dispute.direction === "in" ? "into" : "out of"} Commit</strong>
+          {d0.status.live ? ". Counted in Managers' Commit." : `. No longer counted: ${d0.status.reason}.`}
           <div>&ldquo;{d0.dispute.reason}&rdquo;</div>
           {d0.dispute.bets.length ? (
             <div className="muted small">
@@ -338,7 +355,7 @@ function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
                 else setError(Object.values(r.errors)[0] ?? "Refused.");
               }}
             >
-              Withdraw this Dispute
+              Undo this move
             </button>
           ) : null}
         </div>
@@ -362,14 +379,13 @@ function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
         >
           <p className="muted small" style={{ marginTop: 0 }}>
             {counted
-              ? "Think it won't sign this quarter? A Dispute Out lowers your Manager commitment. The system forecast doesn't change."
+              ? "Think it won't sign this quarter? Moving it out of Commit lowers Managers' Commit. The system forecast doesn't change."
               : "Think it will sign this quarter? Name the step you'll get done and by when. It's accepted only if that makes the deal count, then checked against what happens."}
           </p>
           <div className="form-grid">
             <label className="field">
-              <span className="field-label">{counted ? "Step you expect to miss (optional)" : "Step you bet on"}</span>
+              <span className="field-label">{counted ? "Step you expect to miss" : "Step you bet on"}</span>
               <select value={cond} onChange={(e) => setCond(e.target.value as ConditionType | "")}>
-                {counted ? <option value="">None</option> : null}
                 {open.map((s) => (
                   <option key={s.type} value={s.type}>{CONDITION_LABEL[s.type]}</option>
                 ))}
@@ -387,11 +403,11 @@ function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
             </label>
           </div>
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary">{counted ? "Raise Dispute Out" : "Raise Dispute In"}</button>
+            <button type="submit" className="btn btn-primary">{counted ? "Move out of Commit" : "Move to Commit"}</button>
           </div>
         </form>
       ) : (
-        <p className="muted">No Dispute. Only the deal&apos;s Sales Manager can raise one.</p>
+        <p className="muted">The manager follows the system here. Only the deal&apos;s Sales Manager can change it.</p>
       )}
       {error ? <p className="form-error">{error}</p> : null}
     </>
@@ -557,5 +573,91 @@ function RevOpsChanges({ line }: { line: ForecastLine }) {
         </form>
       ) : null}
     </>
+  );
+}
+
+/**
+ * New claims on this deal that wait for a person, with Approve and Discard in place (as in WCP). Good news counts
+ * only once approved; bad news already counts and is confirmed or discarded. Same rights as Evidence review (DR-04).
+ */
+function PendingReview({ opp, asOf, items }: { opp: Opportunity; asOf: IsoDate; items: { e: Evidence; ev: DealEvent; status: EvidenceStatus }[] }) {
+  const { store, actingUser, refresh } = useStore();
+  if (items.length === 0) return null;
+  return (
+    <div className="pending" data-testid="pending-review">
+      <h2>Waiting for review</h2>
+      {items.map((x) => (
+        <PendingItem
+          key={x.e.id}
+          {...x}
+          overdue={isReviewOverdue(x.status, x.ev, asOf)}
+          actions={allowedActions(actingUser, opp, x.e, x.status)}
+          refusal={refusalReason(actingUser, opp, x.e, x.status)}
+          onAct={async (a, reason) => {
+            const r = await reviewEvidence(store, x.e.id, a, reason);
+            if (r.ok) await refresh();
+            return r.ok ? null : (Object.values(r.errors)[0] ?? "Refused.");
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PendingItem(props: {
+  e: Evidence;
+  ev: DealEvent;
+  status: EvidenceStatus;
+  overdue: boolean;
+  actions: ReviewAction[];
+  refusal: string;
+  onAct: (a: ReviewAction, reason: string) => Promise<string | null>;
+}) {
+  const { e, ev, status } = props;
+  const [discarding, setDiscarding] = useState(false);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const keep = props.actions.find((a) => a !== "reject");
+  return (
+    <div className="pending-item">
+      <div>
+        <strong>{e.summary}</strong>
+        <span className="muted small">
+          {" "}
+          · {CONDITION_LABEL[e.conditionType]} · {formatDisplayDate(ev.occurredAt)}, {ev.sender ?? "unknown sender"}
+        </span>
+        {props.overdue ? <span className="badge overdue">Overdue</span> : null}
+      </div>
+      <div className="quote">&ldquo;{e.quote}&rdquo;</div>
+      <div className="muted small">
+        {status === "waiting" ? "Good news: counts once approved." : "Bad news: already counts. Confirm it, or discard it with a reason."}
+      </div>
+      {props.actions.length ? (
+        <div className="review-actions">
+          {keep ? (
+            <button type="button" className="btn btn-primary" onClick={async () => setError(await props.onAct(keep, ""))}>
+              {keep === "approve" ? "Approve" : "Confirm"}
+            </button>
+          ) : null}
+          {props.actions.includes("reject") ? (
+            discarding ? (
+              <>
+                <input placeholder="Why discard?" value={reason} onChange={(x) => setReason(x.target.value)} aria-label="Reason to discard" />
+                <button type="button" className="btn" onClick={async () => setError(await props.onAct("reject", reason))}>
+                  Discard
+                </button>
+              </>
+            ) : (
+              <button type="button" className="btn" onClick={() => setDiscarding(true)}>
+                Discard
+              </button>
+            )
+          ) : null}
+        </div>
+      ) : (
+        <div className="muted small">{props.refusal}</div>
+      )}
+      {error ? <div className="form-error">{error}</div> : null}
+    </div>
   );
 }

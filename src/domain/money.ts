@@ -21,10 +21,11 @@ export function sumCents(values: readonly Cents[]): Cents {
   return cents(values.reduce((acc, v) => acc + v, 0));
 }
 
-export function formatMillions(value: Cents): string {
+/** Whole dollars with thousands separators, e.g. $500,000 (Liran: full amounts everywhere, never $0.5M). */
+export function formatAmount(value: Cents): string {
   const sign = value < 0 ? "−" : "";
-  const abs = Math.abs(value) / 100_000_000;
-  return `${sign}$${abs.toFixed(1)}M`;
+  const dollars = Math.round(Math.abs(value) / 100);
+  return `${sign}$${String(dollars).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 }
 
 export function formatUsd(value: Cents): string {

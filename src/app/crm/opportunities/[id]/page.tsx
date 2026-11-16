@@ -135,9 +135,9 @@ export default function OpportunityDetailPage() {
             <div><dt>Created</dt><dd>{formatDisplayDate(o.createdAt)}</dd></div>
           </dl>
           <dl className="details revenue">
-            <div><dt>ARR</dt><dd>{o.arr === null ? "—" : formatUsd(o.arr)}</dd></div>
-            <div><dt>Initial term</dt><dd>{o.termMonths === null ? "—" : `${o.termMonths} months`}</dd></div>
-            <div><dt>Non-recurring</dt><dd>{o.nonRecurring === null ? "—" : formatUsd(o.nonRecurring)}</dd></div>
+            <div><dt>Min Commit (ACV)</dt><dd>{o.arr === null ? "—" : formatUsd(o.arr)}</dd></div>
+            <div><dt>Contract duration</dt><dd>{o.termMonths === null ? "—" : `${o.termMonths} months`}</dd></div>
+            <div><dt>Platform fee</dt><dd>{o.nonRecurring === null ? "—" : formatUsd(o.nonRecurring)}</dd></div>
             <div className="tcv"><dt>TCV</dt><dd>{o.tcv === null ? "—" : formatUsd(o.tcv)}</dd></div>
           </dl>
         </div>
@@ -212,7 +212,7 @@ export default function OpportunityDetailPage() {
               <p>
                 Archive this opportunity if it should not be in the pipeline at all, for example a duplicate or a record
                 created by mistake. It leaves the forecast; the record and its history are kept. To record a loss, set the
-                stage to Closed lost instead.
+                stage to S9 - Closed Lost instead.
               </p>
               <FormError message={archiveError} />
               <label className="field">

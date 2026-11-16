@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { DEAL_TYPE_LABEL } from "@/domain/crm-rules";
 import { formatDisplayDate } from "@/domain/dates";
 import { STAGES, type DealType, type Stage } from "@/domain/entities";
-import { formatMillions } from "@/domain/money";
+import { formatAmount } from "@/domain/money";
 import { useStoreQuery } from "@/features/crm/ui";
 
 export default function OpportunitiesPage() {
@@ -78,7 +78,7 @@ export default function OpportunitiesPage() {
             <th>Account</th>
             <th>Deal type</th>
             <th>Manager</th>
-            <th className="num">ARR</th>
+            <th className="num">Min Commit</th>
             <th className="num">TCV</th>
             <th>Stage</th>
             <th>Close date</th>
@@ -99,8 +99,8 @@ export default function OpportunitiesPage() {
                 </td>
                 <td>{DEAL_TYPE_LABEL[o.dealType]}</td>
                 <td>{data.users.find((u) => u.id === o.managerId)?.name}</td>
-                <td className="num">{o.arr === null ? "—" : formatMillions(o.arr)}</td>
-                <td className="num">{o.tcv === null ? "—" : formatMillions(o.tcv)}</td>
+                <td className="num">{o.arr === null ? "—" : formatAmount(o.arr)}</td>
+                <td className="num">{o.tcv === null ? "—" : formatAmount(o.tcv)}</td>
                 <td>{o.stage}</td>
                 <td>{o.signedDate ? formatDisplayDate(o.signedDate) : o.closeDate ? formatDisplayDate(o.closeDate) : "—"}</td>
               </tr>

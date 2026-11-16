@@ -52,15 +52,23 @@ export type DealType = "major_accounts" | "land_and_expand" | "payg";
 export type TemplateVariant = "major_accounts" | "land" | "expand" | "none";
 export type OpportunityStatus = "open" | "won" | "lost" | "disqualified";
 
-export const OPEN_STAGES = ["Discovery", "Pilot", "Evaluation", "Security review", "Contract"] as const;
-export const CLOSED_STAGES = ["Closed won", "Closed lost", "Disqualified"] as const;
+export const OPEN_STAGES = [
+  "S0 - Meeting",
+  "S1 - Prospecting",
+  "S2 - Validation",
+  "S3 - Evaluation",
+  "S4 - Pricing",
+  "S5 - Contracting",
+  "S6 - Review",
+] as const;
+export const CLOSED_STAGES = ["S7 - Closed Won", "S9 - Closed Lost", "S9 - Rejected"] as const;
 export const STAGES = [...OPEN_STAGES, ...CLOSED_STAGES] as const;
 export type Stage = (typeof STAGES)[number];
 
 export function statusForStage(stage: Stage): OpportunityStatus {
-  if (stage === "Closed won") return "won";
-  if (stage === "Closed lost") return "lost";
-  if (stage === "Disqualified") return "disqualified";
+  if (stage === "S7 - Closed Won") return "won";
+  if (stage === "S9 - Closed Lost") return "lost";
+  if (stage === "S9 - Rejected") return "disqualified";
   return "open";
 }
 

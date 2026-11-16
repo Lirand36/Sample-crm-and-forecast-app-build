@@ -4,7 +4,7 @@
 import { compareDates, type IsoDate } from "./dates";
 import type { ChangeLogEntry, DealEvent, EvidenceDecision, ForecastRun, Group, PilotReading, PlanningStandard, RunLine } from "./entities";
 import type { ForecastLine } from "./forecast";
-import type { Cents } from "./money";
+import { formatAmount, type Cents } from "./money";
 
 export type BridgeLineKind =
   | "new"
@@ -203,7 +203,7 @@ const PHRASE: Record<BridgeLineKind, (k: number) => string> = {
 };
 
 function money(c: number): string {
-  return `$${(Math.abs(c) / 100_000_000).toFixed(1)}M`;
+  return formatAmount(Math.abs(c) as Cents);
 }
 
 function sentence(before: number, after: number, lines: BridgeLine[]): string {

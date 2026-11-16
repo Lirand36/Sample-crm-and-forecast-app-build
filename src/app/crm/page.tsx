@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function CrmHome() {
-  redirect("/crm/opportunities");
+  redirect("/crm/accounts");
 }

@@ -10,10 +10,11 @@ import { useStore } from "@/features/shell/StoreProvider";
 import type { BridgeLineKind } from "@/domain/bridge";
 import { daysBetween, formatDisplayDate } from "@/domain/dates";
 import { CONDITION_LABEL, type Group } from "@/domain/entities";
-import { formatMillions, type Cents } from "@/domain/money";
+import { formatAmount, type Cents } from "@/domain/money";
 import { useStoreQuery } from "@/features/crm/ui";
 import { GROUP_LABEL } from "@/features/shell/labels";
 import { DEAL_TYPE_LABEL } from "@/domain/crm-rules";
+import { forecastCategory } from "@/domain/forecast";
 
 const MOVE_LABEL: Record<BridgeLineKind, string> = {
   new: "new deal",
@@ -76,18 +77,20 @@ export default function ForecastHome() {
   const [group, setGroup] = useState<Group | "">("");
   const [industry, setIndustry] = useState("");
   const [dealType, setDealType] = useState("");
+  const [manager, setManager] = useState("");
   const lines = useMemo(() => {
     if (!data) return [];
     return data.forecast.lines
       .filter((l) => !group || l.group === group)
       .filter((l) => !industry || l.view.account?.segment === industry)
       .filter((l) => !dealType || l.view.opportunity.dealType === dealType)
+      .filter((l) => !manager || l.managerId === manager)
       .sort(
         (a, b) =>
           GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group) ||
           (b.tcv ?? 0) - (a.tcv ?? 0),
       );
-  }, [data, group, industry, dealType]);
+  }, [data, group, industry, dealType, manager]);
 
   if (!data) return <p>Loading…</p>;
   const { forecast: f, users } = data;
@@ -163,7 +166,7 @@ export default function ForecastHome() {
               }
             >
               {data.bridge.after < data.bridge.before ? "−" : "+"}
-              {formatMillions(
+              {formatAmount(
                 Math.abs(data.bridge.after - data.bridge.before) as Cents,
               )}
             </span>
@@ -188,8 +191,8 @@ export default function ForecastHome() {
           </div>
           <p data-testid="bridge-sentence">
             {data.bridge.sentence.replace(/\.$/, "")}, from{" "}
-            {formatMillions(data.bridge.before)} to{" "}
-            {formatMillions(data.bridge.after)}.
+            {formatAmount(data.bridge.before)} to{" "}
+            {formatAmount(data.bridge.after)}.
           </p>
           <div className="moves">
             {data.bridge.lines.map((l) => (
@@ -206,7 +209,7 @@ export default function ForecastHome() {
                           m.amount < 0 ? "move-amount short" : "move-amount ok"
                         }
                       >
-                        {formatMillions(m.amount)}
+                        {formatAmount(m.amount)}
                       </div>
                       <div>
                         <div>
@@ -277,7 +280,7 @@ export default function ForecastHome() {
                   <Link href={`/forecast/deals/${l.view.opportunity.id}`}>
                     {l.view.account?.name}
                   </Link>{" "}
-                  {formatMillions(l.tcv ?? (0 as Cents))}: start{" "}
+                  {formatAmount(l.tcv ?? (0 as Cents))}: start{" "}
                   {CONDITION_LABEL[i.condition].toLowerCase()} by{" "}
                   {formatDisplayDate(i.startBy)} and it lands this quarter.
                 </span>
@@ -292,7 +295,7 @@ export default function ForecastHome() {
                 <Link href={`/forecast/deals/${l.view.opportunity.id}`}>
                   {l.view.account?.name}
                 </Link>{" "}
-                {formatMillions(l.tcv ?? (0 as Cents))}: timing fits, but{" "}
+                {formatAmount(l.tcv ?? (0 as Cents))}: timing fits, but{" "}
                 {l.reasons[0] ?? "the customer has not committed"}.
               </span>
             </li>
@@ -305,7 +308,7 @@ export default function ForecastHome() {
                 <Link href={`/forecast/deals/${l.view.opportunity.id}`}>
                   {l.view.account?.name}
                 </Link>{" "}
-                {formatMillions(l.tcv ?? (0 as Cents))} is counted, but{" "}
+                {formatAmount(l.tcv ?? (0 as Cents))} is counted, but{" "}
                 {l.reasons[0] ?? "it is not Firm"}.
               </span>
             </li>
@@ -334,6 +337,18 @@ export default function ForecastHome() {
           <span className="card-figure">{f.lines.length}</span>
         </summary>
         <div className="card-tools">
+          <select
+            value={manager}
+            onChange={(e) => setManager(e.target.value)}
+            aria-label="Manager"
+          >
+            <option value="">All managers</option>
+            {f.managers.map((m) => (
+              <option key={m.managerId} value={m.managerId ?? ""}>
+                {name(m.managerId)}
+              </option>
+            ))}
+          </select>
           <select
             value={group}
             onChange={(e) => setGroup(e.target.value as Group | "")}
@@ -374,16 +389,35 @@ export default function ForecastHome() {
             ))}
           </select>
         </div>
+        {manager
+          ? (() => {
+              const m = f.managers.find((x) => x.managerId === manager);
+              return m ? (
+                <p className="small" data-testid="manager-summary">
+                  {name(manager)}: system forecast{" "}
+                  <strong>{formatAmount(m.core)}</strong>
+                  {m.target === null ? "" : ` of ${formatAmount(m.target)} target`}
+                  , range {formatAmount(m.conservative)} to{" "}
+                  {formatAmount(m.stretch)}. Managers&apos; Commit{" "}
+                  <strong className="manager">
+                    {formatAmount(m.managerCommitment)}
+                  </strong>
+                  .
+                </p>
+              ) : null;
+            })()
+          : null}
         <table className="table compact">
           <thead>
             <tr>
               <th>Deal</th>
               <th>Industry</th>
               <th>Deal type</th>
-              <th>Group</th>
+              <th>System</th>
+              <th>Manager</th>
               <th>Expected signature</th>
-              <th className="num">ARR</th>
-              <th className="num">Non-recurring</th>
+              <th className="num">Min Commit</th>
+              <th className="num">Platform fee</th>
               <th className="num">TCV</th>
               <th>Held back by</th>
             </tr>
@@ -410,6 +444,18 @@ export default function ForecastHome() {
                       {GROUP_LABEL[l.group]}
                     </span>
                   </td>
+                  <td
+                    className={
+                      l.dispute?.status.live ? "small manager strong" : "small"
+                    }
+                    title={
+                      l.dispute?.status.live
+                        ? "The manager's category differs from the system's"
+                        : undefined
+                    }
+                  >
+                    {forecastCategory(l)}
+                  </td>
                   <td className="small nowrap">
                     {evaluated
                       ? l.view.timing.esd.standard
@@ -420,59 +466,22 @@ export default function ForecastHome() {
                         : "—"}
                   </td>
                   <td className="num">
-                    {o.arr === null ? "—" : formatMillions(o.arr)}
+                    {o.arr === null ? "—" : formatAmount(o.arr)}
                   </td>
                   <td className="num">
                     {o.nonRecurring === null
                       ? "—"
-                      : formatMillions(o.nonRecurring)}
+                      : formatAmount(o.nonRecurring)}
                   </td>
                   <td className="num">
                     <strong>
-                      {l.tcv === null ? "—" : formatMillions(l.tcv)}
+                      {l.tcv === null ? "—" : formatAmount(l.tcv)}
                     </strong>
                   </td>
                   <td className="small">{l.reasons.join("; ")}</td>
                 </tr>
               );
             })}
-          </tbody>
-        </table>
-      </details>
-
-      <details className="card">
-        <summary>
-          <span className="card-title">By manager</span>
-        </summary>
-        <table className="table compact">
-          <thead>
-            <tr>
-              <th>Manager</th>
-              <th className="num">System forecast</th>
-              <th className="num">Target</th>
-              <th className="num">Range</th>
-              <th className="num manager">Managers&apos; forecast</th>
-            </tr>
-          </thead>
-          <tbody>
-            {f.managers.map((m) => (
-              <tr key={m.managerId}>
-                <td>{name(m.managerId)}</td>
-                <td className="num">
-                  <strong>{formatMillions(m.core)}</strong>
-                </td>
-                <td className="num">
-                  {m.target === null ? "—" : formatMillions(m.target)}
-                </td>
-                <td className="num muted">
-                  {formatMillions(m.conservative)} to{" "}
-                  {formatMillions(m.stretch)}
-                </td>
-                <td className="num manager">
-                  {formatMillions(m.managerCommitment)}
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </details>
@@ -489,7 +498,7 @@ export default function ForecastHome() {
               <th>Type</th>
               <th className="num">System forecast</th>
               <th className="num">Range</th>
-              <th className="num manager">Managers&apos; forecast</th>
+              <th className="num manager">Managers&apos; Commit</th>
             </tr>
           </thead>
           <tbody>
@@ -499,13 +508,13 @@ export default function ForecastHome() {
                 <td>
                   {r.trigger === "submission" ? "Submission" : "Weekly run"}
                 </td>
-                <td className="num">{formatMillions(r.totals.core)}</td>
+                <td className="num">{formatAmount(r.totals.core)}</td>
                 <td className="num muted">
-                  {formatMillions(r.totals.conservative)} to{" "}
-                  {formatMillions(r.totals.stretch)}
+                  {formatAmount(r.totals.conservative)} to{" "}
+                  {formatAmount(r.totals.stretch)}
                 </td>
                 <td className="num manager">
-                  {formatMillions(r.totals.managerCommitment)}
+                  {formatAmount(r.totals.managerCommitment)}
                 </td>
               </tr>
             ))}
@@ -543,11 +552,11 @@ function Headline({
   return (
     <div className="headline">
       <div className="headline-figure">
-        <span data-testid="core">{formatMillions(core)}</span>
+        <span data-testid="core">{formatAmount(core)}</span>
         {target !== null ? (
           <span className="headline-of">
             {" "}
-            of {formatMillions(target)} target
+            of {formatAmount(target)} target
           </span>
         ) : null}
       </div>
@@ -555,11 +564,11 @@ function Headline({
         <p className="runway-caption">
           {gap >= 0 ? (
             <strong className="ok">
-              {formatMillions(gap as Cents)} above target
+              {formatAmount(gap as Cents)} above target
             </strong>
           ) : (
             <strong className="short">
-              {formatMillions(Math.abs(gap) as Cents)} short
+              {formatAmount(Math.abs(gap) as Cents)} short
             </strong>
           )}
         </p>
@@ -567,7 +576,7 @@ function Headline({
       <div
         className="progress"
         role="img"
-        aria-label={`${formatMillions(core)} of ${target === null ? "no target" : formatMillions(target)}`}
+        aria-label={`${formatAmount(core)} of ${target === null ? "no target" : formatAmount(target)}`}
       >
         <span className="progress-fill" style={{ width: pct(core) }} />
         {target !== null ? (
@@ -576,28 +585,28 @@ function Headline({
       </div>
       <p className="headline-note">
         Could land between{" "}
-        <span data-testid="conservative">{formatMillions(conservative)}</span>{" "}
-        and <span data-testid="stretch">{formatMillions(stretch)}</span>.
+        <span data-testid="conservative">{formatAmount(conservative)}</span>{" "}
+        and <span data-testid="stretch">{formatAmount(stretch)}</span>.
       </p>
       <p className="headline-note">
-        Sales managers&apos; forecast:{" "}
+        Managers&apos; Commit:{" "}
         <span className="manager" data-testid="manager-commitment">
-          {formatMillions(managerCommitment)}
+          {formatAmount(managerCommitment)}
         </span>
         {disputes.length ? (
           <>
             {" "}
-            = {formatMillions(core)} system forecast
+            = {formatAmount(core)} system forecast
             {disputes.map((d) => (
               <span key={d.name} className="dispute-term">
                 {d.amount < 0 ? " − " : " + "}
-                {d.name} {formatMillions(Math.abs(d.amount) as Cents)}
+                {d.name} {formatAmount(Math.abs(d.amount) as Cents)}
               </span>
             ))}
-            , where a manager disagrees with the system.
+            , where a manager moved a deal into or out of Commit.
           </>
         ) : (
-          ". No manager disagrees with the system."
+          ". Every manager follows the system."
         )}
       </p>
       {disputes.length ? (
@@ -607,7 +616,7 @@ function Headline({
               <Link href={`/forecast/deals/${d.id}`}>{d.name}</Link>{" "}
               <span className="manager">
                 {d.amount < 0 ? "−" : "+"}
-                {formatMillions(Math.abs(d.amount) as Cents)}
+                {formatAmount(Math.abs(d.amount) as Cents)}
               </span>
               <span className="muted">, {d.manager}:</span> <q>{d.reason}</q>
             </li>

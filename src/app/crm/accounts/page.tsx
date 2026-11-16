@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { cents, formatMillions } from "@/domain/money";
+import { cents, formatAmount } from "@/domain/money";
 import { useStoreQuery } from "@/features/crm/ui";
 
 export default function AccountsPage() {
@@ -96,7 +96,7 @@ export default function AccountsPage() {
               <td className="small">{a.emailDomains.join(", ") || "—"}</td>
               <td className="num">{contacts}</td>
               <td className="num">{openCount}</td>
-              <td className="num">{openCount ? formatMillions(cents(openTcv)) : "—"}</td>
+              <td className="num">{openCount ? formatAmount(cents(openTcv)) : "—"}</td>
             </tr>
           ))}
           {rows.length === 0 ? (

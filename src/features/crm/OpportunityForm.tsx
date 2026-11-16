@@ -34,7 +34,7 @@ export function OpportunityForm(props: Props) {
   const [arr, setArr] = useState(centsToDollarInput(existing?.arr ?? null));
   const [term, setTerm] = useState(existing?.termMonths === null || existing?.termMonths === undefined ? (existing ? "" : "36") : String(existing.termMonths));
   const [nonRecurring, setNonRecurring] = useState(centsToDollarInput(existing?.nonRecurring ?? null));
-  const [stage, setStage] = useState<Stage>(existing?.stage ?? "Discovery");
+  const [stage, setStage] = useState<Stage>(existing?.stage ?? "S0 - Meeting");
   const [statusReason, setStatusReason] = useState(existing?.statusReason ?? "");
   const [signedDate, setSignedDate] = useState(existing?.signedDate ?? "");
   const [closeDate, setCloseDate] = useState(existing?.closeDate ?? "");
@@ -164,19 +164,19 @@ export function OpportunityForm(props: Props) {
 
       <h3 className="form-section">Revenue (USD)</h3>
       <div className="form-grid">
-        <Field label="ARR" error={errors.arr} hint="Annual recurring revenue.">
+        <Field label="Min Commit (ACV)" error={errors.arr} hint="Committed spend per year.">
           <input inputMode="decimal" value={arr} onChange={(e) => setArr(e.target.value)} disabled={!restrictedAllowed} title={lockTitle} placeholder={isPayg ? "Optional" : "e.g. 1200000"} />
         </Field>
-        <Field label="Initial term (months)" error={errors.termMonths}>
+        <Field label="Contract duration (months)" error={errors.termMonths}>
           <input inputMode="numeric" value={term} onChange={(e) => setTerm(e.target.value)} disabled={!restrictedAllowed} title={lockTitle} placeholder={isPayg ? "Optional" : "e.g. 36"} />
         </Field>
-        <Field label="Non-recurring" error={errors.nonRecurring} hint="One-off implementation and setup fees.">
+        <Field label="Platform fee" error={errors.nonRecurring} hint="One-off fee on top of the commitment.">
           <input inputMode="decimal" value={nonRecurring} onChange={(e) => setNonRecurring(e.target.value)} disabled={!restrictedAllowed} title={lockTitle} placeholder={isPayg ? "Optional" : "e.g. 400000"} />
         </Field>
         <div className="field">
           <span className="field-label">TCV</span>
           <span className="computed" data-testid="tcv-preview">{tcvPreview === null ? "—" : formatUsd(tcvPreview)}</span>
-          <span className="field-hint">ARR × term + non-recurring.</span>
+          <span className="field-hint">Min Commit × duration + platform fee.</span>
           {errors.tcv ? <span className="field-msg">{errors.tcv}</span> : null}
         </div>
       </div>

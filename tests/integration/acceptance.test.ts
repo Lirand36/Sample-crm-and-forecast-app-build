@@ -313,7 +313,7 @@ describe("Part VI acceptance tests on the seed", () => {
           store,
           o.id,
           editOf(o, {
-            stage: "Closed lost",
+            stage: "S9 - Closed Lost",
             statusReason: "Chose a competitor",
           }),
         )
@@ -359,7 +359,7 @@ describe("Part VI acceptance tests on the seed", () => {
         await updateOpportunity(
           store,
           o.id,
-          editOf(o, { stage: "Closed won", signedDate: isoDate("2027-03-01") }),
+          editOf(o, { stage: "S7 - Closed Won", signedDate: isoDate("2027-03-01") }),
         )
       ).ok,
     ).toBe(true);
@@ -648,7 +648,7 @@ describe("Part VI acceptance tests on the seed", () => {
         await updateOpportunity(
           store,
           o.id,
-          editOf(o, { stage: "Closed won", signedDate: isoDate("2027-03-10") }),
+          editOf(o, { stage: "S7 - Closed Won", signedDate: isoDate("2027-03-10") }),
         )
       ).ok,
     ).toBe(true);

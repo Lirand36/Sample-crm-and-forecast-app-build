@@ -99,8 +99,11 @@ function fieldLabel(field: string): string {
     const [from = "", to = ""] = field.slice(5).split(">");
     return `link: ${step(from)} → ${step(to)}`;
   }
-  return field.replace(/_/g, " ");
+  return FIELD_NAMES[field] ?? field.replace(/_/g, " ");
 }
+
+/** WCP's names for the revenue fields. */
+const FIELD_NAMES: Record<string, string> = { arr: "Min Commit (ACV)", non_recurring: "platform fee", term_months: "contract duration" };
 
 function displayLogValue(field: string, value: string | null, users: User[]): string {
   if (value === null) return "—";

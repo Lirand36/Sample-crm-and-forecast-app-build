@@ -18,9 +18,10 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 
 await page.goto(`${base}/`);
-await page.waitForURL(/\/crm\/opportunities$/);
+await page.waitForURL(/\/crm\/accounts$/);
+check("root opens the CRM's Accounts, first in the menu", page.url().endsWith("/crm/accounts"));
+await page.goto(`${base}/crm/opportunities`);
 await page.getByRole("heading", { level: 1, name: /Opportunities/ }).waitFor();
-check("root opens the CRM's Opportunities", page.url().endsWith("/crm/opportunities"));
 check("product name in the top bar", (await page.locator(".brand").innerText()) === "Wonderful CRM");
 check("today's date is Mar 1, 2027", (await page.locator(".today").innerText()).includes("Mar 1, 2027"));
 const bodyText = await page.locator("body").innerText();
@@ -30,12 +31,12 @@ check("Big Deal naming, no Major Accounts", bodyText.includes("Big Deal") && !bo
 await page.getByRole("link", { name: "Forecast", exact: true }).click();
 await page.getByRole("heading", { name: "Forecast", exact: true }).waitFor();
 await page.getByTestId("core").waitFor();
-check("Forecast home: system forecast $26.0M", (await page.getByTestId("core").innerText()) === "$26.0M");
-check("Conservative $13.5M, Stretch $29.5M", (await page.getByTestId("conservative").innerText()) === "$13.5M" && (await page.getByTestId("stretch").innerText()) === "$29.5M");
-check("Manager commitment $51.0M in its own box", (await page.getByTestId("manager-commitment").innerText()) === "$51.0M");
-check("bridge: Feb 22 run to now, Slipped −$20.0M", (await page.getByTestId("bridge-slipped").innerText()).includes("−$20.0M"));
-check("bridge sentence", (await page.getByTestId("bridge-sentence").innerText()).startsWith("Down $39.3M"));
-check("target gap shown", (await page.locator(".runway-caption").innerText()).includes("$20.0M short") && (await page.locator(".headline-figure").innerText()).includes("of $46.0M target"));
+check("Forecast home: system forecast $26,000,000", (await page.getByTestId("core").innerText()) === "$26,000,000");
+check("Conservative $13,500,000, Stretch $29,500,000", (await page.getByTestId("conservative").innerText()) === "$13,500,000" && (await page.getByTestId("stretch").innerText()) === "$29,500,000");
+check("Manager commitment $51,000,000 in its own box", (await page.getByTestId("manager-commitment").innerText()) === "$51,000,000");
+check("bridge: Feb 22 run to now, Slipped −$20,000,000", (await page.getByTestId("bridge-slipped").innerText()).includes("−$20,000,000"));
+check("bridge sentence", (await page.getByTestId("bridge-sentence").innerText()).startsWith("Down $39,300,000"));
+check("target gap shown", (await page.locator(".runway-caption").innerText()).includes("$20,000,000 short") && (await page.locator(".headline-figure").innerText()).includes("of $46,000,000 target"));
 check("National Bank move shows the email quote", (await page.getByTestId("bridge-slipped").innerText()).includes("March 16"), await page.getByTestId("bridge-slipped").innerText());
 await page.locator(".todo a", { hasText: "Energy Group" }).click();
 await page.locator(".verdict").waitFor();
@@ -49,7 +50,7 @@ await page.locator(".intervention").waitFor();
 check("National Bank Intervention: start procurement and legal by Mar 10", (await page.locator(".intervention").innerText()).includes("by Mar 10, 2027"));
 await page.getByRole("button", { name: "Preview" }).click();
 await page.getByTestId("preview").waitFor();
-check("test 4: preview shows the system forecast at $46.0M", (await page.getByTestId("preview").innerText()).includes("$46.0M"));
+check("test 4: preview shows the system forecast at $46,000,000", (await page.getByTestId("preview").innerText()).includes("$46,000,000"));
 await page.getByRole("button", { name: "Close preview" }).click();
 check("closing the preview stores nothing", (await page.getByTestId("preview").count()) === 0);
 await page.getByLabel("Sample email").selectOption("natbank-postponed-no-date.eml");
@@ -65,7 +66,7 @@ await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
 await page.getByTestId("core").waitFor();
 await page.locator("details.more > summary").click();
 const runRow = page.locator("table").last().locator("tbody tr").first();
-check("Feb 22 stored run shows Core $65.3M", (await runRow.innerText()).includes("$65.3M"), await runRow.innerText());
+check("Feb 22 stored run shows Core $65,300,000", (await runRow.innerText()).includes("$65,300,000"), await runRow.innerText());
 
 await page.getByRole("link", { name: "Opportunities", exact: true }).click();
 await page.getByRole("heading", { level: 1, name: /Opportunities/ }).waitFor();
@@ -85,13 +86,13 @@ await page.getByRole("heading", { level: 1, name: /Retail Enterprise/ }).waitFor
 check("Opportunity detail lists its activity", (await page.locator("h2", { hasText: "Activity" }).innerText()).includes("(8)"));
 check("Path to signature explained", (await page.locator(".checklist li").count()) === 7);
 await page.getByRole("button", { name: "Edit" }).click();
-check("another manager cannot edit revenue (DR-04)", await page.getByLabel("ARR").isDisabled());
+check("another manager cannot edit revenue (DR-04)", await page.getByLabel("Min Commit (ACV)").isDisabled());
 await page.getByRole("button", { name: "Cancel" }).click();
 
 await role.selectOption("u-mgr-a");
 await page.getByRole("button", { name: "Edit" }).click();
-await page.getByLabel("ARR").fill("600000");
-await page.getByLabel("Non-recurring").fill("200000");
+await page.getByLabel("Min Commit (ACV)").fill("600000");
+await page.getByLabel("Platform fee").fill("200000");
 check("TCV preview recomputes to $2,000,000", (await page.getByTestId("tcv-preview").innerText()) === "$2,000,000");
 await page.getByRole("button", { name: "Save changes" }).click();
 await page.locator(".details.revenue", { hasText: "$2,000,000" }).waitFor({ timeout: 5000 }).catch(() => {});
@@ -105,8 +106,8 @@ await page.getByRole("combobox", { name: /^Account/ }).selectOption({ label: "Ib
 await page.getByLabel("Name", { exact: true }).fill("Iberia expansion");
 await page.getByLabel("Owner (account executive)").fill("Lucía Moreno");
 await page.getByRole("combobox", { name: /^Deal type/ }).selectOption("land_and_expand");
-await page.getByLabel("ARR").fill("300000");
-await page.getByLabel("Non-recurring").fill("100000");
+await page.getByLabel("Min Commit (ACV)").fill("300000");
+await page.getByLabel("Platform fee").fill("100000");
 await page.getByRole("button", { name: "Create opportunity" }).click();
 await page.getByRole("heading", { level: 1, name: /Iberia expansion/ }).waitFor();
 const det = await page.locator(".details").first().innerText();
@@ -171,8 +172,8 @@ await page.locator("tr", { hasText: "Committee date not final" }).waitFor();
 check("VP Sales rejection is logged with the reason", (await page.locator("tr", { hasText: "Committee date not final" }).innerText()).includes("Daniel Avraham"));
 await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
 await page.getByTestId("stretch").waitFor();
-// $49.5M on the baseline, plus the $0.5M Retail TCV edit made earlier in this script.
-check("test 9: Stretch rises by National Bank's $20M to $50.0M", (await page.getByTestId("stretch").innerText()) === "$50.0M", await page.getByTestId("stretch").innerText());
+// $49,500,000 on the baseline, plus the $500,000 Retail TCV edit made earlier in this script.
+check("test 9: Stretch rises by National Bank's $20M to $50,000,000", (await page.getByTestId("stretch").innerText()) === "$50,000,000", await page.getByTestId("stretch").innerText());
 
 // Submission by a Sales Manager, then Next week
 await role.selectOption("u-mgr-a");
@@ -184,16 +185,17 @@ await page.locator("table").last().locator("td", { hasText: "Submission" }).wait
 check("Sales Manager submission freezes a run", (await page.locator("table").last().innerText()).includes("Submission"));
 await page.goto(`${base}/forecast/deals/opp-natbank`);
 await page.getByTestId("dispute").waitFor();
-await page.getByRole("button", { name: "Withdraw this Dispute" }).click();
-await page.getByRole("button", { name: "Raise Dispute In" }).waitFor();
+await page.getByRole("button", { name: "Undo this move" }).click();
+await page.getByRole("button", { name: "Move to Commit" }).waitFor();
 await page.getByLabel("Reason").fill("Legal will run in parallel");
-await page.getByRole("button", { name: "Raise Dispute In" }).click();
+await page.getByRole("button", { name: "Move to Commit" }).click();
 await page.locator(".form-error").waitFor();
 check("a Bet on security alone is refused: the deal would still be late", (await page.locator(".form-error").innerText()).includes("would not count"));
 await page.getByRole("combobox", { name: "Step you bet on" }).selectOption("procurement_legal");
-await page.getByRole("button", { name: "Raise Dispute In" }).click();
+await page.getByRole("button", { name: "Move to Commit" }).click();
 await page.getByTestId("dispute").waitFor();
 check("manager withdraws and re-raises a Dispute In with a Bet", (await page.getByTestId("dispute").innerText()).includes("Legal will run in parallel"));
+check("National Bank: the manager calls Commit while the system does not", /Manager: Commit · System: (Stretch|Late)/.test(await page.getByTestId("category").innerText()), await page.getByTestId("category").innerText());
 await page.getByRole("link", { name: "Administration" }).click();
 await page.getByTestId("next-week").click();
 await page.locator(".today", { hasText: "Mar 8, 2027" }).waitFor();
@@ -211,8 +213,8 @@ await page.getByTestId("not-backtested").waitFor();
 check("no closed quarter: Not yet backtested", (await page.getByTestId("not-backtested").innerText()).includes("Not yet backtested"));
 await page.getByTestId("show-synthetic").click();
 const bt = await page.getByTestId("synthetic").innerText();
-check("test 60: BT-1 shows $1.0M / $3.0M / $4.0M, Actual $2.0M, precision 33.3%, capture 50.0%, bias −2.5 days",
-  ["$1.0M / $3.0M / $4.0M", "$2.0M", "33.3%", "50.0%", "+$1.0M", "−2.5 days"].every((x) => bt.includes(x)), bt.replace(/\s+/g, " ").slice(0, 300));
+check("test 60: BT-1 shows $1,000,000 / $3,000,000 / $4,000,000, Actual $2,000,000, precision 33.3%, capture 50.0%, bias −2.5 days",
+  ["$1,000,000 / $3,000,000 / $4,000,000", "$2,000,000", "33.3%", "50.0%", "+$1,000,000", "−2.5 days"].every((x) => bt.includes(x)), bt.replace(/\s+/g, " ").slice(0, 300));
 check("example carries no synthetic label (R-8, Liran's decision)", (await page.locator('[data-testid="synthetic"] .synthetic-tag').count()) === 0);
 
 // Planning standard v2 (test 45): RevOps approves Procurement and legal 12 / 30 / 40 from today
@@ -230,14 +232,14 @@ await page.getByTestId("standard-result").waitFor();
 check("Procurement and legal v2 approved", (await page.getByTestId("standard-result").innerText()).includes("v2: 12 / 30 / 40"));
 await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
 await page.getByTestId("core").waitFor();
-await page.waitForFunction(() => document.querySelector('[data-testid="core"]')?.textContent === "$13.5M", null, { timeout: 5000 }).catch(() => {});
-check("test 45: Core falls to $13.5M as Energy Group moves to Stretch", (await page.getByTestId("core").innerText()) === "$13.5M", await page.getByTestId("core").innerText());
-check("test 45: Conservative $3.5M as Insurance Group leaves Firm", (await page.getByTestId("conservative").innerText()) === "$3.5M", await page.getByTestId("conservative").innerText());
+await page.waitForFunction(() => document.querySelector('[data-testid="core"]')?.textContent === "$13,500,000", null, { timeout: 5000 }).catch(() => {});
+check("test 45: Core falls to $13,500,000 as Energy Group moves to Stretch", (await page.getByTestId("core").innerText()) === "$13,500,000", await page.getByTestId("core").innerText());
+check("test 45: Conservative $3,500,000 as Insurance Group leaves Firm", (await page.getByTestId("conservative").innerText()) === "$3,500,000", await page.getByTestId("conservative").innerText());
 
 // RevOps waiver (test 53): a Sales Manager sees no form; RevOps waives Legal on Retail, which drops to Core
 await role.selectOption("u-mgr-a");
 await page.goto(`${base}/forecast/deals/opp-retail`);
-await page.getByRole("heading", { name: "Manager's position" }).waitFor();
+await page.getByRole("heading", { name: "Forecast category" }).waitFor();
 check("a Sales Manager has no waiver form", (await page.getByTestId("revops-form").count()) === 0);
 await role.selectOption("u-revops");
 await page.getByTestId("revops-form").waitFor();
@@ -254,7 +256,7 @@ check("the waiver is in the deal's change log", (await page.locator("main").inne
 
 await page.goto(`${base}/crm/opportunities`);
 await page.locator("tbody tr").first().waitFor();
-check("restore removes the created opportunity and restores TCV", (await page.locator("tbody tr").count()) === 10 && (await page.locator("tbody tr", { hasText: "Retail Enterprise" }).innerText()).includes("$1.5M"));
+check("restore removes the created opportunity and restores TCV", (await page.locator("tbody tr").count()) === 10 && (await page.locator("tbody tr", { hasText: "Retail Enterprise" }).innerText()).includes("$1,500,000"));
 
 check("no page errors", errors.length === 0, errors.join("; "));
 await browser.close();

@@ -14,9 +14,9 @@ interface NavItem {
 }
 
 const CRM_NAV: NavItem[] = [
-  { href: "/crm/opportunities", label: "Opportunities" },
   { href: "/crm/accounts", label: "Accounts" },
   { href: "/crm/contacts", label: "Contacts" },
+  { href: "/crm/opportunities", label: "Opportunities" },
 ];
 const APPS_NAV: NavItem[] = [
   { href: "/forecast", label: "Forecast" },
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
       <header className="topbar">
-        <Link href="/crm/opportunities" className="brand">
+        <Link href="/crm/accounts" className="brand">
           {PRODUCT_NAME}
         </Link>
         <div className="topbar-right">

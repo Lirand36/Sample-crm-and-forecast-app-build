@@ -6,7 +6,7 @@ import { useState, type FormEvent } from "react";
 import { archiveAccount, changeLogFor, updateAccount } from "@/application/crm";
 import { DEAL_TYPE_LABEL } from "@/domain/crm-rules";
 import { formatDisplayDate } from "@/domain/dates";
-import { formatMillions } from "@/domain/money";
+import { formatAmount } from "@/domain/money";
 import { AccountForm } from "@/features/crm/AccountForm";
 import { ChangeHistory, FormError, useStoreQuery } from "@/features/crm/ui";
 import { CONTACT_ROLE_LABEL } from "@/features/shell/labels";
@@ -135,7 +135,7 @@ export default function AccountDetailPage() {
                 </td>
                 <td>{DEAL_TYPE_LABEL[o.dealType]}</td>
                 <td>{data.users.find((u) => u.id === o.managerId)?.name}</td>
-                <td className="num">{o.tcv === null ? "—" : formatMillions(o.tcv)}</td>
+                <td className="num">{o.tcv === null ? "—" : formatAmount(o.tcv)}</td>
                 <td>{o.stage}</td>
                 <td>{o.signedDate ? formatDisplayDate(o.signedDate) : o.closeDate ? formatDisplayDate(o.closeDate) : "—"}</td>
               </tr>
