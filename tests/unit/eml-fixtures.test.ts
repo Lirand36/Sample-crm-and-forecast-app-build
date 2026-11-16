@@ -42,3 +42,10 @@ describe(".eml fixtures with stored extraction (handoff Part VII)", () => {
     expect([relog.from, relog.body]).toEqual([original.sender, original.text]);
   });
 });
+
+describe("bundled email text", () => {
+  it("matches the .eml files (run npm run gen:eml after changing them)", async () => {
+    const { EML_RAW } = await import("@/seed/eml-raw");
+    for (const f of readdirSync(dir)) expect(EML_RAW[f]).toBe(readFileSync(join(dir, f), "utf8"));
+  });
+});

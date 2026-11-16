@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "node tests/e2e/smoke.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test"
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "gen:eml": "node scripts/gen-eml.mjs"
   },
   "dependencies": {
     "idb": "8.0.3",
