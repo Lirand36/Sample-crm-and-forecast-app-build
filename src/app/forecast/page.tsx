@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { loadForecast } from "@/application/forecast";
+import { loadBridge, loadForecast } from "@/application/forecast";
+import { BRIDGE_LABEL } from "@/domain/bridge";
 import { formatDisplayDate } from "@/domain/dates";
 import { CONDITION_LABEL, type Group } from "@/domain/entities";
 import type { ForecastLine } from "@/domain/forecast";
@@ -13,10 +14,12 @@ import { COMMITMENT_LABEL, GROUP_LABEL, READINESS_LABEL } from "@/features/shell
 const GROUP_ORDER: Group[] = ["signed", "firm", "core", "stretch", "late", "timing_unknown", "uncommitted", "excluded"];
 
 export default function ForecastHome() {
+  const [baselineId, setBaselineId] = useState<string>("");
   const data = useStoreQuery(async (s) => {
     const [forecast, users, runs] = await Promise.all([loadForecast(s), s.repos.users.list(), s.repos.forecastRuns.list()]);
-    return { forecast, users, runs: runs.sort((a, b) => b.seq - a.seq) };
-  });
+    const bridge = await loadBridge(s, forecast, baselineId || undefined);
+    return { forecast, users, bridge, runs: runs.sort((a, b) => b.seq - a.seq) };
+  }, [baselineId]);
   const [group, setGroup] = useState<Group | "">("");
   const lines = useMemo(() => {
     if (!data) return [];
@@ -67,6 +70,60 @@ export default function ForecastHome() {
           </div>
         </div>
       </div>
+
+      {data.bridge ? (
+        <div className="bridge">
+          <div className="section-head">
+            <h2>What changed</h2>
+            <label className="check small">
+              Since
+              <select value={data.bridge.baseline.id} onChange={(e) => setBaselineId(e.target.value)} aria-label="Compare with">
+                {data.runs
+                  .filter((r) => r.asOfDate <= f.asOf)
+                  .map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {formatDisplayDate(r.asOfDate)} {r.trigger === "submission" ? "submission" : "run"}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          </div>
+          <p data-testid="bridge-sentence">{data.bridge.sentence}</p>
+          <table className="table compact">
+            <tbody>
+              <tr>
+                <td>System forecast on {formatDisplayDate(data.bridge.baseline.asOfDate)}</td>
+                <td className="num">{formatMillions(data.bridge.before)}</td>
+                <td></td>
+              </tr>
+              {data.bridge.lines.map((l) => (
+                <tr key={l.kind} data-testid={`bridge-${l.kind}`}>
+                  <td>
+                    {BRIDGE_LABEL[l.kind]} <span className="muted small">({l.moves.length})</span>
+                  </td>
+                  <td className="num">{formatMillions(l.amount)}</td>
+                  <td className="small">
+                    {l.moves.map((m) => {
+                      const line = f.lines.find((x) => x.view.opportunity.id === m.opportunityId);
+                      return (
+                        <div key={m.opportunityId}>
+                          <Link href={`/forecast/deals/${m.opportunityId}`}>{line?.view.account?.name ?? m.opportunityId}</Link>
+                          <span className="muted"> · {m.causes.join("; ")}</span>
+                        </div>
+                      );
+                    })}
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <td><strong>System forecast now</strong></td>
+                <td className="num"><strong>{formatMillions(data.bridge.after)}</strong></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
       <div className="stake">
         <StakeList

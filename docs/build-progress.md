@@ -11,9 +11,9 @@ Read this first when resuming. Each line is a pushed, tested piece.
 - [x] Forecast deal screen `src/app/forecast/deals/[id]/page.tsx`: verdict, commitment, three planned dates vs quarter end, path calendar, steps with evidence (grade, status, quote) and planning standard.
 - [x] Evidence review: rights `src/domain/evidence-review.ts` (DR-04, G-1), service `src/application/evidence.ts`, page `/evidence` (queue with overdue flag, review log, VP Sales overturn). Test 9 passes (Stretch $49.5M, spec $15.5M).
 - [x] Interventions `src/domain/interventions.ts`, latest viable dates in `timing.ts`, preview via `computeForecast(..., preview)`. Recoverable on Home; Interventions block with Preview on the deal screen. Tests 3, 4 and PRD §8 intervention values pass (Recoverable $21.0M).
-- [ ] Next: Movement bridge since the previous run (DR-14, C-2 selectable baseline) and storing runs (daily and on Submission, C-1).
+- [x] Movement bridge `src/domain/bridge.ts` (PRD §4J, DR-14 Removed and transfers, causes), `loadBridge` with C-2 default baseline, "What changed" block on Home with a baseline picker. Test 1 bridge passes (from $65.3M: Lost −$1.8M, Commitment lost −$15.0M, Slipped −$20.0M, TCV change −$2.5M).
+- [ ] Next: storing runs (daily and on Submission, C-1), Submit button for Sales Managers, Disputes raise/withdraw with Bet check, "Next week" control (moves as-of to Mar 8 and loads the fifth Airline reading), Add event (.eml import).
 - [ ] Raise and withdraw Disputes from the UI, Bet acceptance check.
-- [ ] Stored runs, movement bridge (DR-14), Submissions (C-1).
 - [ ] Next week control, backtest (BT-1, DR-15 open question R-8).
 
 Dollar figures in spec tests convert by re-summing with R-9 amounts (see implementation-decisions.md).

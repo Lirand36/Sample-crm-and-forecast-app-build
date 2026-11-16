@@ -33,6 +33,8 @@ await page.getByTestId("core").waitFor();
 check("Forecast home: system forecast $26.0M", (await page.getByTestId("core").innerText()) === "$26.0M");
 check("Conservative $13.5M, Stretch $29.5M", (await page.getByTestId("conservative").innerText()) === "$13.5M" && (await page.getByTestId("stretch").innerText()) === "$29.5M");
 check("Manager commitment $51.0M in its own box", (await page.getByTestId("manager-commitment").innerText()) === "$51.0M");
+check("bridge: Feb 22 run to now, Slipped −$20.0M", (await page.getByTestId("bridge-slipped").innerText()).includes("−$20.0M"));
+check("bridge sentence", (await page.getByTestId("bridge-sentence").innerText()).startsWith("The system forecast is down $39.3M"));
 check("target gap shown", (await page.locator(".number-target").innerText()).includes("short by $20.0M"));
 await page.locator(".stake-box a", { hasText: "Energy Group" }).click();
 await page.locator(".verdict").waitFor();
