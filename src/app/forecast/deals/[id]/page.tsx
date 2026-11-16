@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { raiseDispute, withdrawDispute } from "@/application/disputes";
 import { loadForecastWithData } from "@/application/forecast";
+import { useStore } from "@/features/shell/StoreProvider";
+import type { ForecastLine } from "@/domain/forecast";
 import { evidenceStatus, gradeOf, type ConditionState, type EvidenceStatus } from "@/domain/condition-state";
 import { compareDates, daysBetween, formatDisplayDate, maxDate, type IsoDate } from "@/domain/dates";
 import { CONDITION_LABEL, type ConditionType } from "@/domain/entities";
@@ -186,6 +189,8 @@ export default function ForecastDealPage() {
         </>
       ) : null}
 
+      {evaluated ? <ManagerPosition line={line} qe={qe} /> : null}
+
       <h2>Steps and evidence</h2>
       <table className="table compact">
         <thead>
@@ -287,5 +292,100 @@ function PathCalendar({ steps, asOf, qe, links }: { steps: StepTiming[]; asOf: I
         Dark: standard pace. Light: extends to slow pace. Vertical line: quarter end ({formatDisplayDate(qe)}).
       </div>
     </div>
+  );
+}
+
+function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
+  const { store, actingUser, refresh } = useStore();
+  const o = line.view.opportunity;
+  const isManager = actingUser.role === "sales_manager" && actingUser.id === o.managerId;
+  const counted = ["firm", "core"].includes(line.group);
+  const open = line.view.states.filter((s) => s.state !== "done" && s.state !== "waived");
+  const [reason, setReason] = useState("");
+  const [cond, setCond] = useState<ConditionType | "">(open[0]?.type ?? "");
+  const [by, setBy] = useState<string>(qe);
+  const [error, setError] = useState<string | null>(null);
+  const d0 = line.dispute;
+
+  return (
+    <>
+      <h2>Manager&apos;s position</h2>
+      {d0 ? (
+        <div className={`dispute ${d0.status.live ? "" : "stale"}`} data-testid="dispute">
+          <strong>Dispute {d0.dispute.direction === "in" ? "In" : "Out"}</strong>
+          {d0.status.live ? " · counted in Manager commitment" : ` · stale: ${d0.status.reason}`}
+          <div>&ldquo;{d0.dispute.reason}&rdquo;</div>
+          {d0.dispute.bets.length ? (
+            <div className="muted small">
+              Bet: {d0.dispute.bets.map((b) => `${CONDITION_LABEL[b.conditionType].toLowerCase()} done by ${formatDisplayDate(b.by)}`).join("; ")}
+            </div>
+          ) : null}
+          {isManager ? (
+            <button
+              type="button"
+              className="link-button"
+              onClick={async () => {
+                const r = await withdrawDispute(store, d0.dispute.id);
+                if (r.ok) await refresh();
+                else setError(Object.values(r.errors)[0] ?? "Refused.");
+              }}
+            >
+              Withdraw this Dispute
+            </button>
+          ) : null}
+        </div>
+      ) : isManager ? (
+        <form
+          className="form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const r = await raiseDispute(store, {
+              opportunityId: o.id,
+              direction: counted ? "out" : "in",
+              reason,
+              bets: !counted && cond ? [{ conditionType: cond, by: by as IsoDate }] : [],
+              outCondition: counted && cond ? cond : null,
+            });
+            if (r.ok) {
+              setError(null);
+              await refresh();
+            } else setError(Object.values(r.errors)[0] ?? "Refused.");
+          }}
+        >
+          <p className="muted small" style={{ marginTop: 0 }}>
+            {counted
+              ? "Disagree that this deal will sign this quarter? A Dispute Out lowers your Manager commitment. It never changes the system forecast."
+              : "Believe this deal will sign this quarter? Name the step you expect done and by when. It is accepted only if that would make the deal count, and it is checked against what actually happens."}
+          </p>
+          <div className="form-grid">
+            <label className="field">
+              <span className="field-label">{counted ? "Step you expect to miss (optional)" : "Step you bet on"}</span>
+              <select value={cond} onChange={(e) => setCond(e.target.value as ConditionType | "")}>
+                {counted ? <option value="">None</option> : null}
+                {open.map((s) => (
+                  <option key={s.type} value={s.type}>{CONDITION_LABEL[s.type]}</option>
+                ))}
+              </select>
+            </label>
+            {!counted ? (
+              <label className="field">
+                <span className="field-label">Done by</span>
+                <input type="date" value={by} max={qe} onChange={(e) => setBy(e.target.value)} />
+              </label>
+            ) : null}
+            <label className="field">
+              <span className="field-label">Reason</span>
+              <input value={reason} onChange={(e) => setReason(e.target.value)} />
+            </label>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">{counted ? "Raise Dispute Out" : "Raise Dispute In"}</button>
+          </div>
+        </form>
+      ) : (
+        <p className="muted">No Dispute on this deal. Only its Sales Manager can raise one.</p>
+      )}
+      {error ? <p className="form-error">{error}</p> : null}
+    </>
   );
 }

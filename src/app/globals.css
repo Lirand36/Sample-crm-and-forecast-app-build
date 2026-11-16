@@ -989,3 +989,16 @@ tr.archived td {
 .bridge {
   margin-bottom: 16px;
 }
+
+.dispute {
+  background: var(--surface);
+  border: 1px dashed var(--manager);
+  border-radius: 6px;
+  padding: 10px 14px;
+  max-width: 900px;
+}
+
+.dispute.stale {
+  border-color: var(--line);
+  color: var(--muted);
+}
