@@ -13,6 +13,7 @@ import { CONDITION_LABEL, type Group } from "@/domain/entities";
 import { formatMillions, type Cents } from "@/domain/money";
 import { useStoreQuery } from "@/features/crm/ui";
 import { GROUP_LABEL } from "@/features/shell/labels";
+import { DEAL_TYPE_LABEL } from "@/domain/crm-rules";
 
 const MOVE_LABEL: Record<BridgeLineKind, string> = {
   new: "new deal",
@@ -73,16 +74,20 @@ export default function ForecastHome() {
     [baselineId],
   );
   const [group, setGroup] = useState<Group | "">("");
+  const [industry, setIndustry] = useState("");
+  const [dealType, setDealType] = useState("");
   const lines = useMemo(() => {
     if (!data) return [];
     return data.forecast.lines
       .filter((l) => !group || l.group === group)
+      .filter((l) => !industry || l.view.account?.segment === industry)
+      .filter((l) => !dealType || l.view.opportunity.dealType === dealType)
       .sort(
         (a, b) =>
           GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group) ||
           (b.tcv ?? 0) - (a.tcv ?? 0),
       );
-  }, [data, group]);
+  }, [data, group, industry, dealType]);
 
   if (!data) return <p>Loading…</p>;
   const { forecast: f, users } = data;
@@ -129,7 +134,10 @@ export default function ForecastHome() {
         disputes={f.lines
           .filter((l) => l.dispute?.status.live)
           .map((l) => ({
+            id: l.view.opportunity.id,
             name: l.view.account?.name ?? "",
+            manager: name(l.dispute!.dispute.managerId),
+            reason: l.dispute!.dispute.reason,
             amount: ((l.dispute!.dispute.direction === "in" ? 1 : -1) * (l.tcv ?? 0)) as Cents,
           }))}
         core={c.core}
@@ -327,11 +335,25 @@ export default function ForecastHome() {
               </option>
             ))}
           </select>
+          <select value={industry} onChange={(e) => setIndustry(e.target.value)} aria-label="Industry">
+            <option value="">All industries</option>
+            {[...new Set(f.lines.map((l) => l.view.account?.segment ?? ""))].filter(Boolean).sort().map((x) => (
+              <option key={x} value={x}>{x}</option>
+            ))}
+          </select>
+          <select value={dealType} onChange={(e) => setDealType(e.target.value)} aria-label="Deal type">
+            <option value="">All deal types</option>
+            {Object.entries(DEAL_TYPE_LABEL).map(([v, lbl]) => (
+              <option key={v} value={v}>{lbl}</option>
+            ))}
+          </select>
         </div>
         <table className="table compact">
           <thead>
             <tr>
               <th>Deal</th>
+              <th>Industry</th>
+              <th>Deal type</th>
               <th>Group</th>
               <th>Expected signature</th>
               <th className="num">ARR</th>
@@ -355,6 +377,8 @@ export default function ForecastHome() {
                     </Link>
                     <div className="muted small">{name(o.managerId)}</div>
                   </td>
+                  <td className="small">{l.view.account?.segment ?? "—"}</td>
+                  <td className="small">{DEAL_TYPE_LABEL[o.dealType]}</td>
                   <td>
                     <span className={`group-pill g-${l.group}`}>
                       {GROUP_LABEL[l.group]}
@@ -466,7 +490,7 @@ function Headline({
   managerCommitment,
   disputes,
 }: {
-  disputes: { name: string; amount: Cents }[];
+  disputes: { id: string; name: string; manager: string; reason: string; amount: Cents }[];
   core: Cents;
   conservative: Cents;
   stretch: Cents;
@@ -535,6 +559,17 @@ function Headline({
           ". No manager disagrees with the system."
         )}
       </p>
+      {disputes.length ? (
+        <ul className="dispute-list">
+          {disputes.map((d) => (
+            <li key={d.id}>
+              <Link href={`/forecast/deals/${d.id}`}>{d.name}</Link>{" "}
+              <span className="manager">{d.amount < 0 ? "−" : "+"}{formatMillions(Math.abs(d.amount) as Cents)}</span>
+              <span className="muted">, {d.manager}:</span> <q>{d.reason}</q>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
