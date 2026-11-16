@@ -80,7 +80,7 @@ export default function OpportunityDetailPage() {
     if (result.ok) {
       setArchiving(false);
       setArchiveError(undefined);
-      await refresh();
+      await refresh(`Archived ${o.name}`);
     } else setArchiveError(Object.values(result.errors)[0]);
   }
 
@@ -118,7 +118,7 @@ export default function OpportunityDetailPage() {
             const result = await updateOpportunity(store, o.id, input, reason);
             if (result.ok) {
               setEditing(false);
-              await refresh();
+              await refresh(`CRM edit: ${o.name}`);
             }
             return result;
           }}

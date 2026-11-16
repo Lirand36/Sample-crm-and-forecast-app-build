@@ -195,11 +195,15 @@ await page.getByRole("combobox", { name: "Step you bet on" }).selectOption("proc
 await page.getByRole("button", { name: "Move to Commit" }).click();
 await page.getByTestId("dispute").waitFor();
 check("manager withdraws and re-raises a Dispute In with a Bet", (await page.getByTestId("dispute").innerText()).includes("Legal will run in parallel"));
+await page.getByTestId("impact").waitFor();
+check("the move shows what it did: Managers' Commit before and after", /moved National Bank into Commit/.test(await page.getByTestId("impact").innerText()) && (await page.getByTestId("impact").innerText()).includes("Managers' Commit"), (await page.getByTestId("impact").innerText()).replace(/\s+/g, " ").slice(0, 200));
 check("National Bank: the manager calls Commit while the system does not", /Manager: Commit · System: (Stretch|Late)/.test(await page.getByTestId("category").innerText()), await page.getByTestId("category").innerText());
 await page.getByRole("link", { name: "Administration" }).click();
 await page.getByTestId("next-week").click();
 await page.locator(".today", { hasText: "Mar 8, 2027" }).waitFor();
 check("Next week moves today to Mar 8", (await page.locator(".today").innerText()).includes("Mar 8, 2027"));
+await page.getByTestId("impact").waitFor();
+check("Next week shows what it did: today moved and bets re-checked", (await page.getByTestId("impact").innerText()).includes("Today moved from Mar 1, 2027 to Mar 8, 2027"));
 
 await page.getByRole("link", { name: "Administration" }).click();
 await page.getByTestId("reset-start").click();
@@ -248,8 +252,8 @@ await page.getByRole("combobox", { name: "Step to waive" }).selectOption("procur
 await page.getByLabel("Change reason").fill("Customer's standard paper");
 await page.getByRole("button", { name: "Waive step" }).click();
 await page.getByTestId("revops-result").waitFor();
-await page.getByText("waiver in place").first().waitFor({ timeout: 5000 }).catch(() => {});
-check("waiver on Retail: Core with 'waiver in place'", (await page.locator("main").innerText()).includes("waiver in place"));
+await page.locator("main").getByText("waiver in place").first().waitFor({ timeout: 5000 }).catch(() => {});
+check("waiver on Retail: Core with 'waiver in place'", (await page.locator("main").innerText()).includes("waiver in place"), await page.locator(".verdict-reason").innerText());
 await page.goto(`${base}/crm/opportunities/opp-retail`);
 await page.getByText("waiver: Procurement").first().waitFor({ timeout: 5000 }).catch(() => {});
 check("the waiver is in the deal's change log", (await page.locator("main").innerText()).includes("Customer's standard paper"));

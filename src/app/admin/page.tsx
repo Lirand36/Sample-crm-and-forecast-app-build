@@ -37,7 +37,7 @@ export default function AdminPage() {
             onClick={async () => {
               setMoving(true);
               await advanceOneWeek(store);
-              await refresh();
+              await refresh("Next week");
               setMoving(false);
             }}
           >

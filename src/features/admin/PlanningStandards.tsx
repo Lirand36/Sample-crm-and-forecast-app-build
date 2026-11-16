@@ -108,7 +108,7 @@ export function PlanningStandards() {
             if (!r.ok) return setErrors(r.errors);
             setErrors({});
             setDone(`Approved ${label(r.value.conditionType)} v${r.value.version}: ${r.value.fastDays} / ${r.value.standardDays} / ${r.value.slowDays} days from ${formatDisplayDate(r.value.effectiveFrom)}.`);
-            await refresh();
+            await refresh(`New planning standard: ${label(r.value.conditionType)} v${r.value.version}`);
           }}
         >
           <h3>Approve a new version</h3>

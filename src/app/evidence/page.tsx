@@ -84,7 +84,7 @@ export default function EvidenceReviewPage() {
             refusal={refusalReason(actingUser, r.opp, r.e, r.status)}
             onAct={async (action, reason) => {
               const res = await reviewEvidence(store, r.e.id, action, reason);
-              if (res.ok) await refresh();
+              if (res.ok) await refresh(`${action === "reject" ? "Rejected" : action === "approve" ? "Approved" : "Confirmed"}: ${r.e.summary}`);
               return res.ok ? null : Object.values(res.errors)[0] ?? "Refused.";
             }}
           />

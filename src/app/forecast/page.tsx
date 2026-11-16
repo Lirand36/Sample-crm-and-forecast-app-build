@@ -623,6 +623,10 @@ function Headline({
           ))}
         </ul>
       ) : null}
+      <p className="muted small">
+        A Sales Manager moves a deal into or out of Commit on the deal&apos;s
+        page and says why. The system re-checks every move each day.
+      </p>
     </div>
   );
 }

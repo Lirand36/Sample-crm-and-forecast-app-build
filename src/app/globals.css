@@ -1423,3 +1423,131 @@ details.card[open] {
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
+
+/* "What that did": the forecast before and after the last action. */
+.impact {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  padding: 14px 16px 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(21, 35, 44, 0.18);
+  animation: impact-in 0.28s ease-out;
+}
+
+@keyframes impact-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.impact-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.impact-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.impact-close {
+  border: 0;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted, #5b6b75);
+}
+
+.impact-title {
+  font-weight: 600;
+  margin: 2px 0 8px;
+}
+
+.impact-asof {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.impact-totals {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.impact-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.impact-row.manager span:first-child {
+  color: var(--manager);
+}
+
+.impact-move {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.impact-before {
+  color: var(--muted, #5b6b75);
+  text-decoration: line-through;
+}
+
+.impact-delta {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.impact-delta.up {
+  background: #e3f3ea;
+  color: #1d6b43;
+}
+
+.impact-delta.down {
+  background: #fbe7e4;
+  color: #a33a2b;
+}
+
+.impact-none {
+  font-size: 14px;
+}
+
+.impact-deals {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .impact {
+    right: 16px;
+    bottom: 16px;
+  }
+}

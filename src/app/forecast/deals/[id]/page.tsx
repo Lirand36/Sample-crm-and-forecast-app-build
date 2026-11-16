@@ -351,7 +351,7 @@ function ManagerPosition({ line, qe, users }: { line: ForecastLine; qe: IsoDate;
               className="link-button"
               onClick={async () => {
                 const r = await withdrawDispute(store, d0.dispute.id);
-                if (r.ok) await refresh();
+                if (r.ok) await refresh(`${managerName} undid the move on ${o.name.split(" — ")[0]}`);
                 else setError(Object.values(r.errors)[0] ?? "Refused.");
               }}
             >
@@ -373,7 +373,7 @@ function ManagerPosition({ line, qe, users }: { line: ForecastLine; qe: IsoDate;
             });
             if (r.ok) {
               setError(null);
-              await refresh();
+              await refresh(`${managerName} moved ${o.name.split(" — ")[0]} ${counted ? "out of" : "into"} Commit`);
             } else setError(Object.values(r.errors)[0] ?? "Refused.");
           }}
         >
@@ -429,7 +429,7 @@ function AddEmail({ opportunityId, accountName }: { opportunityId: string; accou
     else if (v.unread) parts.push("Saved as activity. Nothing was read from it.");
     else parts.push(`Found ${v.evidence.length} claim${v.evidence.length === 1 ? "" : "s"}${v.unverifiable ? `, dropped ${v.unverifiable} whose quote isn't in the email` : ""}. Good news waits for review; bad news applies now.`);
     setMessage(parts.join(" "));
-    await refresh();
+    await refresh(`Email added: ${v.event.sender ?? "unknown sender"}, ${formatDisplayDate(v.event.occurredAt)}`);
   }
 
   return (
@@ -514,7 +514,7 @@ function RevOpsChanges({ line }: { line: ForecastLine }) {
             if (!r.ok) return setMessage(Object.values(r.errors)[0] ?? "Refused.");
             setMessage(mode === "waive" ? "Step waived and logged." : "Link changed and logged.");
             setReason("");
-            await refresh();
+            await refresh(mode === "waive" ? "RevOps waived a step" : "RevOps changed a link");
           }}
         >
           <p className="muted small" style={{ marginTop: 0 }}>
@@ -595,7 +595,7 @@ function PendingReview({ opp, asOf, items }: { opp: Opportunity; asOf: IsoDate; 
           refusal={refusalReason(actingUser, opp, x.e, x.status)}
           onAct={async (a, reason) => {
             const r = await reviewEvidence(store, x.e.id, a, reason);
-            if (r.ok) await refresh();
+            if (r.ok) await refresh(`${a === "reject" ? "Discarded" : a === "approve" ? "Approved" : "Confirmed"}: ${x.e.summary}`);
             return r.ok ? null : (Object.values(r.errors)[0] ?? "Refused.");
           }}
         />

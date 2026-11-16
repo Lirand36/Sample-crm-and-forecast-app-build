@@ -1,5 +1,6 @@
 "use client";
 
+import { ImpactPanel } from "./ImpactPanel";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -94,6 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavSection title="Settings" items={ADMIN_NAV} pathname={pathname} />
         </aside>
         <main className="main">{children}</main>
+        <ImpactPanel />
       </div>
     </div>
   );
