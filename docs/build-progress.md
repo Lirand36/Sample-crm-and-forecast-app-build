@@ -20,6 +20,7 @@ Read this first when resuming. Each line is a pushed, tested piece.
 - [x] Backtest (DR-15, test 60): real backtest per stored run of each closed quarter; "Not yet backtested" until then; example quarter BT-1 with no label (R-8, Liran's call).
 - [x] Design pass: runway hero on Forecast (target line, manager marker), teal system / plum manager palette, Schibsted Grotesk, lighter top bar, no all-caps labels, phone layout fixed, product name "Wonderful CRM".
 - [x] Forecast home rebuilt with Liran (Nov 16): headline vs target, moves with the email behind them, What to do, collapsible cards, Previous quarters under Forecast, managers' forecast broken down, ARR and non-recurring in Deals.
-- [ ] Next: traceability matrix. About 40 of the 61 spec tests are not yet named in the test suite; check each explicitly (spec value vs converted value).
+- [x] All 61 spec tests checked one by one: `docs/acceptance-traceability.md` (59 pass, 2 partial: test 14 has no 100-deal generator, test 47 is display only). New suites `tests/integration/acceptance.test.ts` (seed) and `tests/unit/synthetic-deals.test.ts`. Fixed on the way: Bets re-checked on every recompute (DR-10), Dispute Out must name a step (DR-11), PAYG excluded when Won (DR-07), automatic pilot failure (DR-02), Actual at the cutoff (DR-12, R-17), Uncommitted names its timing (R-18), Removed uses the earlier TCV (R-16). Home lists stop at 3 rows.
+- [ ] Next: whatever Liran asks; offered the same simplification pass on the deal screen.
 
 Dollar figures in spec tests convert by re-summing with R-9 amounts (see implementation-decisions.md).

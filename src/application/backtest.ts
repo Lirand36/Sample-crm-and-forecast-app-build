@@ -1,7 +1,7 @@
 // Real backtests (DR-15): one result per stored run of each closed quarter (as-of past the cutoff,
-// QE + 7 days, DR-12). Deals are the run's lines; the outcome is the signed date in the CRM now.
+// QE + 7 days, DR-12). Deals are the run's lines; the outcome is the signed date as the CRM recorded it at the cutoff.
 
-import { computeBacktest, type BacktestDeal, type BacktestResult } from "@/domain/backtest";
+import { computeBacktest, signedAsOfCutoff, type BacktestDeal, type BacktestResult } from "@/domain/backtest";
 import { addDays, compareDates } from "@/domain/dates";
 import type { ForecastRun, Quarter } from "@/domain/entities";
 import { readSession } from "./clock";
@@ -14,8 +14,9 @@ export interface QuarterBacktest {
 
 export async function loadBacktests(store: DataStore): Promise<QuarterBacktest[]> {
   const session = await readSession(store);
-  const [quarters, runs, lines, opps] = await Promise.all([
+  const [quarters, runs, lines, opps, changeLog] = await Promise.all([
     store.repos.quarters.list(), store.repos.forecastRuns.list(), store.repos.runLines.list(), store.repos.opportunities.list(),
+    store.repos.changeLog.list(),
   ]);
   const closed = quarters.filter((q) => compareDates(addDays(q.end, 7), session.asOfDate) <= 0);
   return closed
@@ -34,7 +35,7 @@ export async function loadBacktests(store: DataStore): Promise<QuarterBacktest[]
                 tcv: l.tcv!,
                 group: l.group,
                 planned: l.esdStandard,
-                signedOn: o?.status === "won" && o.dealType !== "payg" ? o.signedDate : null,
+                signedOn: o ? signedAsOfCutoff(o, changeLog, q.end) : null,
               };
             });
           return { run, deals, result: computeBacktest(deals, q, run.totals.managerCommitment) };

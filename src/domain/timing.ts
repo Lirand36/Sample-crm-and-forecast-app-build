@@ -121,6 +121,7 @@ function pilotTiming(
     const on = state.doneOn ?? asOf;
     return { finish: perCase(() => on), remaining: perCase(() => 0) };
   }
+  if (state.pilotFailed) return { finish: perCase(() => null), remaining: perCase(() => "pilot_failed" as const) };
   if (!acceptance) return { finish: perCase(() => null), remaining: perCase(() => "no_planning_standard" as const) };
   const days = standardDays(acceptance);
   if (compareDates(asOf, addDays(plan.evaluationDate, days.slow)) > 0) {

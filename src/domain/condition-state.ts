@@ -74,6 +74,8 @@ export interface ConditionState {
   latestProgress: IsoDate | null;
   /** Evidence ids applied to state, in replay order. */
   applied: string[];
+  /** DR-02 automatic pilot: the first reading on or after the evaluation date missed a target. */
+  pilotFailed?: boolean;
 }
 
 export interface ConditionStateInput {
@@ -181,6 +183,7 @@ export function conditionState(input: ConditionStateInput, asOf: IsoDate): Condi
     // contrary opens a deal-level signal; status and intent change no state.
   }
 
+  let pilotFailed = false;
   // DR-02 automatic acceptance: first reading on or after the evaluation date that meets all targets.
   const plan = input.type === "pilot" ? (input.pilotPlan ?? null) : null;
   if (plan && plan.acceptanceMode === "automatic" && state !== "done") {
@@ -191,7 +194,7 @@ export function conditionState(input: ConditionStateInput, asOf: IsoDate): Condi
       state = "done";
       doneOn = first.weekEnding;
       doneGrade = "direct";
-    }
+    } else if (first) pilotFailed = true;
   }
 
   // A pilot with a plan and readings is running. This is display state only: DR-02 times the pilot by its
@@ -204,5 +207,5 @@ export function conditionState(input: ConditionStateInput, asOf: IsoDate): Condi
   const blockedNow = blocked.find((iv) => inside(asOf, iv)) ?? null;
   if (state !== "done" && blockedNow) state = "blocked";
 
-  return { ...base, state, doneOn, doneGrade, blocked, blockedNow, spanStart, latestProgress, applied };
+  return { ...base, state, doneOn, doneGrade, blocked, blockedNow, spanStart, latestProgress, applied, ...(pilotFailed ? { pilotFailed } : {}) };
 }

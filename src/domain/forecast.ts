@@ -4,6 +4,7 @@
 import { classify, scenarioTotals, type Classification, type ScenarioTotals } from "./classification";
 import type { IsoDate } from "./dates";
 import { dealView, type DealView, type ForecastData } from "./deal-view";
+import { betStillSufficient } from "./dispute-rules";
 import { disputeStatus, managerCommitment, type DisputeStatus } from "./disputes";
 import type { Dispute, Quarter, QuarterTarget } from "./entities";
 import type { Cents } from "./money";
@@ -70,13 +71,15 @@ export function computeForecast(data: ForecastInput, asOf: IsoDate, quarter: Qua
     const chosen = preview?.opportunityId === o.id ? interventions.find((i) => i.condition === preview.condition) : undefined;
     const view = chosen ? { ...live, timing: chosen.timing } : live;
     const c = chosen ? chosen.result : liveClass;
+    const recheck = (st: DisputeStatus): DisputeStatus =>
+      st.live && d!.direction === "in" && !betStillSufficient(live, d!.bets, data, asOf, quarter) ? { live: false, reason: "Bet no longer sufficient" } : st;
     const d = data.disputes.find((x) => x.opportunityId === o.id && x.quarterId === quarter.id && !(x.withdrawnAt && x.withdrawnAt <= asOf));
     return {
       ...c,
       view,
       tcv: o.tcv,
       managerId: o.managerId,
-      dispute: d ? { dispute: d, status: disputeStatus(d, c.group, view.states, asOf) } : null,
+      dispute: d ? { dispute: d, status: recheck(disputeStatus(d, c.group, view.states, asOf)) } : null,
       interventions,
       previewing: chosen ? chosen.condition : null,
     };

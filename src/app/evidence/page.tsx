@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { reviewEvidence } from "@/application/evidence";
 import { evidenceStatus, gradeOf, type EvidenceStatus } from "@/domain/condition-state";
-import { daysBetween, formatDisplayDate } from "@/domain/dates";
+import { formatDisplayDate } from "@/domain/dates";
 import { CONDITION_LABEL, type DealEvent, type Evidence } from "@/domain/entities";
-import { allowedActions, refusalReason, type ReviewAction } from "@/domain/evidence-review";
+import { allowedActions, isReviewOverdue, refusalReason, type ReviewAction } from "@/domain/evidence-review";
 import { useStoreQuery } from "@/features/crm/ui";
 import { CONTACT_ROLE_LABEL } from "@/features/shell/labels";
 import { useStore } from "@/features/shell/StoreProvider";
@@ -79,7 +79,7 @@ export default function EvidenceReviewPage() {
             deal={accountName(r.opp.accountId)}
             dealId={r.opp.id}
             contactRole={roleOf(r.ev, data.contacts)}
-            overdue={r.status === "provisional" && daysBetween(r.ev.occurredAt, asOf) > 3}
+            overdue={isReviewOverdue(r.status, r.ev, asOf)}
             actions={allowedActions(actingUser, r.opp, r.e, r.status)}
             refusal={refusalReason(actingUser, r.opp, r.e, r.status)}
             onAct={async (action, reason) => {

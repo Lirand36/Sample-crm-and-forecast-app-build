@@ -1,8 +1,8 @@
 // Backtest metrics (DR-15) for one stored run of a closed quarter. Pure. "In Core" means Signed, Firm
 // or Core. Actual is the TCV signed inside the quarter (DR-12).
 
-import { compareDates, daysBetween, type IsoDate } from "./dates";
-import type { Group } from "./entities";
+import { addDays, compareDates, daysBetween, isoDate, type IsoDate } from "./dates";
+import type { ChangeLogEntry, Group, Opportunity } from "./entities";
 import type { Cents } from "./money";
 
 export interface BacktestDeal {
@@ -12,6 +12,25 @@ export interface BacktestDeal {
   /** Standard-pace planned signature date at the run. */
   planned: IsoDate | null;
   signedOn: IsoDate | null;
+}
+
+/**
+ * DR-12: the signed date that counts for Actual is the CRM as recorded at the cutoff (quarter end + 7 days).
+ * Undo every later change to status and signed date; PAYG never counts.
+ */
+export function signedAsOfCutoff(o: Opportunity, changeLog: readonly ChangeLogEntry[], quarterEnd: IsoDate): IsoDate | null {
+  if (o.dealType === "payg") return null;
+  const cutoff = addDays(quarterEnd, 7);
+  let status: string | null = o.status;
+  let signed: string | null = o.signedDate;
+  const later = changeLog
+    .filter((c) => c.entity === "opportunity" && c.entityId === o.id && compareDates(c.at, cutoff) > 0)
+    .sort((a, b) => b.seq - a.seq);
+  for (const c of later) {
+    if (c.field === "status") status = c.oldValue;
+    if (c.field === "signed_date") signed = c.oldValue;
+  }
+  return status === "won" && signed ? isoDate(signed) : null;
 }
 
 export interface BacktestResult {

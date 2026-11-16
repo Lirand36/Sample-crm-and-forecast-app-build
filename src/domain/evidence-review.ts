@@ -1,7 +1,13 @@
 // Who may approve, confirm or reject Evidence (DR-04, G-1). Pure.
 
 import type { EvidenceStatus } from "./condition-state";
-import { CONDITION_NUMBER, REVERSING_CLAIMS, type Evidence, type Opportunity, type User } from "./entities";
+import { daysBetween, type IsoDate } from "./dates";
+import { CONDITION_NUMBER, REVERSING_CLAIMS, type DealEvent, type Evidence, type Opportunity, type User } from "./entities";
+
+/** DR-04 / test 50: provisional bad news left unreviewed for more than 3 calendar days is overdue. Display only. */
+export function isReviewOverdue(status: EvidenceStatus, event: Pick<DealEvent, "loggedAt">, asOf: IsoDate): boolean {
+  return status === "provisional" && daysBetween(event.loggedAt, asOf) > 3;
+}
 
 export type ReviewAction = "approve" | "confirm" | "reject";
 

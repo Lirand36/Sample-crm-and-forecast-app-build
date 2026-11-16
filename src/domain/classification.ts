@@ -16,6 +16,8 @@ export type Eligibility =
 export function eligibility(view: DealView, quarter: Quarter): Eligibility {
   const o = view.opportunity;
   if (o.archivedAt) return { kind: "excluded", reason: "archived" };
+  // DR-07: PAYG is never forecast, open or Won, and never counts in Actual.
+  if (o.dealType === "payg") return { kind: "excluded", reason: "PAYG — not forecast" };
   if (o.status === "won") {
     if (!o.signedDate) return { kind: "excluded", reason: "data error: won with no signed date" };
     const inQuarter = compareDates(o.signedDate, quarter.start) >= 0 && compareDates(o.signedDate, quarter.end) <= 0;
@@ -23,7 +25,6 @@ export function eligibility(view: DealView, quarter: Quarter): Eligibility {
   }
   if (o.status === "lost") return { kind: "excluded", reason: "lost" };
   if (o.status === "disqualified") return { kind: "excluded", reason: o.statusReason ? `disqualified: ${o.statusReason}` : "disqualified" };
-  if (o.dealType === "payg") return { kind: "excluded", reason: "pay-as-you-go, not forecast" };
   if (!o.tcv) return { kind: "excluded", reason: "no TCV" };
   return { kind: "evaluated" };
 }
@@ -145,7 +146,9 @@ export function classify(view: DealView, data: ForecastData, asOf: IsoDate, quar
     return { eligibility: elig, commitment: c, group: "late", reasons: [...reasons, "planned signature date is after quarter end"] };
   }
   if (c.level === "engaged" && (r === "slow" || r === "standard")) return { eligibility: elig, commitment: c, group: "stretch", reasons };
-  if (c.level === "engaged") reasons.push(r === "fast" ? "signs this quarter only at fast pace" : "planned signature date is after quarter end");
+  // PRD test 25: an Uncommitted deal that also does not fit names both problems.
+  if (r === "fast") reasons.push("signs this quarter only at fast pace");
+  else if (r === "not_ready") reasons.push(view.timing.esd.fast === null ? "timing unknown" : "planned signature date is after quarter end");
   return { eligibility: elig, commitment: c, group: "uncommitted", reasons };
 }
 

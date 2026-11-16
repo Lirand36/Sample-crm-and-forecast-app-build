@@ -138,7 +138,8 @@ export default function ForecastHome() {
             name: l.view.account?.name ?? "",
             manager: name(l.dispute!.dispute.managerId),
             reason: l.dispute!.dispute.reason,
-            amount: ((l.dispute!.dispute.direction === "in" ? 1 : -1) * (l.tcv ?? 0)) as Cents,
+            amount: ((l.dispute!.dispute.direction === "in" ? 1 : -1) *
+              (l.tcv ?? 0)) as Cents,
           }))}
         core={c.core}
         conservative={c.conservative}
@@ -193,7 +194,7 @@ export default function ForecastHome() {
           <div className="moves">
             {data.bridge.lines.map((l) => (
               <div key={l.kind} data-testid={`bridge-${l.kind}`}>
-                {l.moves.map((m) => {
+                {l.moves.slice(0, TOP).map((m) => {
                   const line = f.lines.find(
                     (x) => x.view.opportunity.id === m.opportunityId,
                   );
@@ -245,6 +246,11 @@ export default function ForecastHome() {
                     </div>
                   );
                 })}
+                {l.moves.length > TOP ? (
+                  <div className="move-more muted small">
+                    And {l.moves.length - TOP} more. See Deals below.
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -262,7 +268,7 @@ export default function ForecastHome() {
           </span>
         </summary>
         <ul className="todo">
-          {f.recoverable.map((l) => {
+          {f.recoverable.slice(0, TOP).map((l) => {
             const i = l.interventions[0]!;
             return (
               <li key={`r-${l.view.opportunity.id}`}>
@@ -278,7 +284,8 @@ export default function ForecastHome() {
               </li>
             );
           })}
-          {f.readyNotCommitted.map((l) => (
+          <More n={f.recoverable.length} what="to pull in" />
+          {f.readyNotCommitted.slice(0, TOP).map((l) => (
             <li key={`c-${l.view.opportunity.id}`}>
               <span className="todo-tag tag-chase">Chase</span>
               <span>
@@ -290,7 +297,8 @@ export default function ForecastHome() {
               </span>
             </li>
           ))}
-          {f.downside.map((l) => (
+          <More n={f.readyNotCommitted.length} what="to chase" />
+          {f.downside.slice(0, TOP).map((l) => (
             <li key={`w-${l.view.opportunity.id}`}>
               <span className="todo-tag tag-watch">Watch</span>
               <span>
@@ -302,6 +310,7 @@ export default function ForecastHome() {
               </span>
             </li>
           ))}
+          <More n={f.downside.length} what="to watch" />
           {data.waiting > 0 ? (
             <li>
               <span className="todo-tag tag-review">Review</span>
@@ -319,7 +328,9 @@ export default function ForecastHome() {
 
       <details className="card">
         <summary>
-          <span className="card-title">Deals: value, group and what holds each back</span>
+          <span className="card-title">
+            Deals: value, group and what holds each back
+          </span>
           <span className="card-figure">{f.lines.length}</span>
         </summary>
         <div className="card-tools">
@@ -335,16 +346,31 @@ export default function ForecastHome() {
               </option>
             ))}
           </select>
-          <select value={industry} onChange={(e) => setIndustry(e.target.value)} aria-label="Industry">
+          <select
+            value={industry}
+            onChange={(e) => setIndustry(e.target.value)}
+            aria-label="Industry"
+          >
             <option value="">All industries</option>
-            {[...new Set(f.lines.map((l) => l.view.account?.segment ?? ""))].filter(Boolean).sort().map((x) => (
-              <option key={x} value={x}>{x}</option>
-            ))}
+            {[...new Set(f.lines.map((l) => l.view.account?.segment ?? ""))]
+              .filter(Boolean)
+              .sort()
+              .map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
           </select>
-          <select value={dealType} onChange={(e) => setDealType(e.target.value)} aria-label="Deal type">
+          <select
+            value={dealType}
+            onChange={(e) => setDealType(e.target.value)}
+            aria-label="Deal type"
+          >
             <option value="">All deal types</option>
             {Object.entries(DEAL_TYPE_LABEL).map(([v, lbl]) => (
-              <option key={v} value={v}>{lbl}</option>
+              <option key={v} value={v}>
+                {lbl}
+              </option>
             ))}
           </select>
         </div>
@@ -393,10 +419,18 @@ export default function ForecastHome() {
                         ? `Signed ${formatDisplayDate(o.signedDate)}`
                         : "—"}
                   </td>
-                  <td className="num">{o.arr === null ? "—" : formatMillions(o.arr)}</td>
-                  <td className="num">{o.nonRecurring === null ? "—" : formatMillions(o.nonRecurring)}</td>
                   <td className="num">
-                    <strong>{l.tcv === null ? "—" : formatMillions(l.tcv)}</strong>
+                    {o.arr === null ? "—" : formatMillions(o.arr)}
+                  </td>
+                  <td className="num">
+                    {o.nonRecurring === null
+                      ? "—"
+                      : formatMillions(o.nonRecurring)}
+                  </td>
+                  <td className="num">
+                    <strong>
+                      {l.tcv === null ? "—" : formatMillions(l.tcv)}
+                    </strong>
                   </td>
                   <td className="small">{l.reasons.join("; ")}</td>
                 </tr>
@@ -490,7 +524,13 @@ function Headline({
   managerCommitment,
   disputes,
 }: {
-  disputes: { id: string; name: string; manager: string; reason: string; amount: Cents }[];
+  disputes: {
+    id: string;
+    name: string;
+    manager: string;
+    reason: string;
+    amount: Cents;
+  }[];
   core: Cents;
   conservative: Cents;
   stretch: Cents;
@@ -546,7 +586,8 @@ function Headline({
         </span>
         {disputes.length ? (
           <>
-            {" "}= {formatMillions(core)} system forecast
+            {" "}
+            = {formatMillions(core)} system forecast
             {disputes.map((d) => (
               <span key={d.name} className="dispute-term">
                 {d.amount < 0 ? " − " : " + "}
@@ -564,12 +605,27 @@ function Headline({
           {disputes.map((d) => (
             <li key={d.id}>
               <Link href={`/forecast/deals/${d.id}`}>{d.name}</Link>{" "}
-              <span className="manager">{d.amount < 0 ? "−" : "+"}{formatMillions(Math.abs(d.amount) as Cents)}</span>
+              <span className="manager">
+                {d.amount < 0 ? "−" : "+"}
+                {formatMillions(Math.abs(d.amount) as Cents)}
+              </span>
               <span className="muted">, {d.manager}:</span> <q>{d.reason}</q>
             </li>
           ))}
         </ul>
       ) : null}
     </div>
+  );
+}
+
+/** PRD test 14: every list on Home shows at most three rows; the rest are one line away, in Deals. */
+const TOP = 3;
+
+function More({ n, what }: { n: number; what: string }) {
+  if (n <= TOP) return null;
+  return (
+    <li className="todo-more muted small">
+      And {n - TOP} more {what}. See Deals below.
+    </li>
   );
 }
