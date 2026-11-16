@@ -780,3 +780,147 @@ tr.archived td {
   background: #f6e1e1;
   color: var(--danger);
 }
+
+.verdict {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 20px;
+}
+
+.verdict > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.verdict strong {
+  font-size: 17px;
+}
+
+.verdict-reason {
+  margin: 10px 0 0;
+}
+
+.esd-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.esd {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.esd.fits {
+  border-left-color: var(--ok);
+}
+
+.esd.misses {
+  border-left-color: var(--danger);
+}
+
+.calendar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.cal-head {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 230px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.cal-label {
+  width: 220px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.cal-track {
+  position: relative;
+  flex: 1;
+  height: 18px;
+  background: #f4f3ef;
+  border-radius: 3px;
+}
+
+.cal-track span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+}
+
+.cal-slow {
+  background: #c9d6e3;
+}
+
+.cal-std {
+  background: var(--accent);
+}
+
+.cal-track .cal-qe {
+  width: 2px;
+  top: -4px;
+  bottom: -4px;
+  background: var(--danger);
+}
+
+.cal-track .cal-none {
+  left: 6px;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.cal-legend {
+  margin-top: 8px;
+}
+
+.ev {
+  margin-bottom: 6px;
+}
+
+.ev.struck {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.quote {
+  color: var(--text);
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .esd-row {
+    grid-template-columns: 1fr;
+  }
+  .cal-label {
+    width: 120px;
+  }
+  .cal-head {
+    margin-left: 130px;
+  }
+}

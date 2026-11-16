@@ -148,7 +148,7 @@ export default function ForecastHome() {
             return (
               <tr key={o.id} className={l.group === "excluded" ? "archived" : undefined}>
                 <td>
-                  <Link href={`/crm/opportunities/${o.id}`}>{l.view.account?.name ?? o.name}</Link>
+                  <Link href={`/forecast/deals/${o.id}`}>{l.view.account?.name ?? o.name}</Link>
                   <div className="muted small">{name(o.managerId)}</div>
                 </td>
                 <td><span className={`group-pill g-${l.group}`}>{GROUP_LABEL[l.group]}</span></td>
@@ -219,7 +219,7 @@ function StakeList({ title, hint, lines, detail }: { title: string; hint: string
         <ul>
           {lines.slice(0, 3).map((l) => (
             <li key={l.view.opportunity.id}>
-              <Link href={`/crm/opportunities/${l.view.opportunity.id}`}>{l.view.account?.name}</Link>{" "}
+              <Link href={`/forecast/deals/${l.view.opportunity.id}`}>{l.view.account?.name}</Link>{" "}
               <span className="nowrap">{formatMillions(l.tcv ?? (0 as Cents))}</span>
               <div className="muted small">{detail(l)}</div>
             </li>

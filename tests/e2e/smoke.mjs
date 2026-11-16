@@ -34,6 +34,13 @@ check("Forecast home: system forecast $26.0M", (await page.getByTestId("core").i
 check("Conservative $13.5M, Stretch $29.5M", (await page.getByTestId("conservative").innerText()) === "$13.5M" && (await page.getByTestId("stretch").innerText()) === "$29.5M");
 check("Manager commitment $51.0M in its own box", (await page.getByTestId("manager-commitment").innerText()) === "$51.0M");
 check("target gap shown", (await page.locator(".number-target").innerText()).includes("short by $20.0M"));
+await page.locator(".stake-box a", { hasText: "Energy Group" }).click();
+await page.locator(".verdict").waitFor();
+const verdict = await page.locator(".verdict").innerText();
+check("Forecast deal screen: Energy Group is Core, planned Mar 23", verdict.includes("Core") && verdict.includes("Mar 23, 2027"), verdict.replace(/\s+/g, " "));
+check("path calendar shows the open step", (await page.locator(".cal-row").count()) === 1);
+await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
+await page.getByTestId("core").waitFor();
 const runRow = page.locator("table").last().locator("tbody tr").first();
 check("Feb 22 stored run shows Core $65.3M", (await runRow.innerText()).includes("$65.3M"), await runRow.innerText());
 
