@@ -76,7 +76,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [state, readAll]);
 
   if (state.status === "loading") {
-    return <div className="boot">Loading the demo data in this browser…</div>;
+    return <div className="boot">Loading…</div>;
   }
   if (state.status === "error") {
     return (

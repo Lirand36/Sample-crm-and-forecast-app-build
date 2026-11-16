@@ -32,7 +32,7 @@ Liran approved C-1, C-2, C-3 and C-5 in principle and asked for judgement where 
 
 ### G-1. The VP Sales may reject Evidence that is already confirmed or approved (Liran's decision)
 
-**Decision.** Rejecting an Evidence record whose status is already *confirmed* (reversing claim) or *approved* (advancing claim) is reserved for the **VP Sales**. In the app, the VP Sales is the CRO role, labelled "CRO / VP Sales" in the role switcher. A reason is required. The rejection is listed in the RevOps review log, and the movement bridge names it as the cause ("Evidence rejected"). Rights over *provisional* and *waiting* Evidence stay exactly as DR-04 sets them.
+**Decision.** Rejecting an Evidence record whose status is already *confirmed* (reversing claim) or *approved* (advancing claim) is reserved for the **VP Sales**. In the app, the VP Sales is a separate user and role (`vp_sales`, Daniel Avraham), reporting to the CRO (Liran's review of slice 1: the CRO and the VP Sales are different people). A reason is required. The rejection is listed in the RevOps review log, and the movement bridge names it as the cause ("Evidence rejected"). Rights over *provisional* and *waiting* Evidence stay exactly as DR-04 sets them.
 
 **Why, and what it means in practice.** Once a manager or RevOps has confirmed a record, overturning it is a second-level decision, so it goes to the most senior sales role. The control is visibility: every reversal carries the VP Sales's name and reason, appears in the RevOps log, and shows in the bridge.
 
@@ -85,16 +85,29 @@ If no row matches, the Condition has no estimate ("no planning standard", DR-08)
 | T-9 | Opportunity and Account owner are display names (`ownerName`), not users | Part IV's User roles are Sales Manager, RevOps and CRO. Reps have no forecasting task (PRD §2), so they are not users. |
 | T-10 | Domain purity enforced by ESLint (no UI, storage, platform imports; no `Date`, `fetch`, `process`, `Math.random`) and by a test | Part V non-negotiable engine properties. |
 | T-11 | Dates are `YYYY-MM-DD` strings with pure calendar arithmetic (no `Date` object); money is integer cents | Part V. Avoids time-zone drift; the quarter's reporting time zone is stored for display. |
-| T-12 | The role switcher stores the acting user in the browser store; the CRO is labelled "CRO / VP Sales" | DR-16 single-presenter demo; G-1. |
+| T-12 | The "Signed in as" switcher in the top bar stores the acting user in the browser store. CRO and VP Sales are separate users. | DR-16 single-presenter demo; G-1. |
 
 ## C. Phase 2 CRM decisions
 
 | # | Decision | Reason |
 |---|---|---|
 | P2-1 | Archiving an Opportunity needs the same right as editing its status: the deal's Sales Manager or RevOps. A reason is required. | Archiving removes the deal from the forecast (C-3), so it carries the same weight as a status change. DR-04 lists no archive right of its own. |
-| P2-2 | Fields outside DR-04's list (name, owner, CRM close date, CRM stage) can be edited by any role. | Part IV puts permissions beyond DR-04 out of scope. The engine never reads these fields. |
-| P2-3 | Every CRM edit is logged field by field with author, simulated date and an optional note, including creation and archive. Only TCV, status, signed date, manager and archive count as bridge causes. | DR-13 says every edit is logged. Restricting bridge causes keeps the bridge focused on what can move the number. |
-| P2-4 | Changing status away from Won clears the signed date; changing away from Lost or Disqualified clears the reason. | A stale signed date on a non-Won deal would be read as a data error. |
+| P2-2 | Fields outside DR-04's list (name, owner, close date, open stage) can be edited by any role. | Part IV puts permissions beyond DR-04 out of scope. The engine never reads these fields. |
+| P2-3 | Every CRM edit is logged field by field with author, simulated date and an optional note, including creation and archive. Only TCV (and the ARR, term and non-recurring that make it), the closing stage, signed date, manager and archive count as bridge causes. | DR-13 says every edit is logged. Restricting bridge causes keeps the bridge focused on what can move the number. |
+| P2-4 | Changing the stage away from Closed won clears the signed date; changing it away from Closed lost or Disqualified clears the reason. | A stale signed date on a non-Won deal would be read as a data error. |
 | P2-5 | An Account's email domains must be valid and unique across Accounts. They are stored lower-case, without a leading "@". | DR-05 derives an email's origin from the sender's domain. A domain shared by two Accounts would make that derivation ambiguous. |
 | P2-6 | Only RevOps can archive an Account, and only when it has no open opportunities. | Archiving an Account hides it from pick lists. Doing that while it has open deals would orphan them. |
 | P2-7 | Deal type and template variant cannot be edited after creation. | DR-07 fixes the variant at creation. Changing the deal type would change the template. |
+
+## D. Changes from Liran's review of slice 1
+
+| # | Decision | Reason and spec note |
+|---|---|---|
+| R-1 | The product is "Demo Wonderful CRM": a CRM with a sidebar (CRM, Apps, Settings). Forecast is an app opened from the menu, not a tab beside the CRM. | Liran's review. |
+| R-2 | Stage is the only lifecycle field. Status (open, won, lost, disqualified) is derived from it: Closed won, Closed lost and Disqualified are closing stages, the rest are open. | Liran: the stage already says it. The engine still reads only the derived outcome (DR-13), so nothing changes for forecasting. |
+| R-3 | Revenue is ARR, initial term in months and non-recurring. TCV is computed as ARR × term ÷ 12 + non-recurring and cannot be typed. | Liran asked for ARR and non-recurring that agree with each other. Every seeded TCV is unchanged, so all test values hold. Test 12's "TCV edit" becomes an edit of ARR or non-recurring. ARR, term and non-recurring are restricted fields like TCV (DR-04). |
+| R-4 | Deal type "Major Accounts" is shown as "Big Deal". The template variant is no longer shown as "(land)"; an expansion is described in words. | Liran's review. Stored values are unchanged. |
+| R-5 | No demo or seed disclaimers. Events imported with the data show the source "Imported", events added later "Manual import". | Liran's review. This replaces DR-05/D-09's "Seeded demo" label; the label still never claims a live source. DR-16's on-screen browser-storage notice is removed; the README keeps it. |
+| R-6 | Archive stays, as a quiet link at the bottom of the deal page with an explanation and a required reason. | Part IV forbids deletion, and DR-14's bridge needs a "Removed" line for deals taken out of the pipeline (C-3). |
+| R-7 | Reset stays, as "Restore baseline data" under Settings > Administration, with a confirm step. | Part VII and the Definition of Done require a one-click reset so every walkthrough starts from the same numbers. |
+| R-8 | Open: DR-15 requires the backtest to be labelled synthetic. Not built yet (Phase 9); needs Liran's call against R-5. | Spec conflict. |

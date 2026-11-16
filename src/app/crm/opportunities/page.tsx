@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { DEAL_TYPE_LABEL, STATUS_LABEL } from "@/domain/crm-rules";
+import { DEAL_TYPE_LABEL } from "@/domain/crm-rules";
 import { formatDisplayDate } from "@/domain/dates";
-import type { DealType, OpportunityStatus } from "@/domain/entities";
+import { STAGES, type DealType, type Stage } from "@/domain/entities";
 import { formatMillions } from "@/domain/money";
-import { CrmTabs, useStoreQuery } from "@/features/crm/ui";
+import { useStoreQuery } from "@/features/crm/ui";
 
 export default function OpportunitiesPage() {
   const data = useStoreQuery(async (store) => {
@@ -18,7 +18,7 @@ export default function OpportunitiesPage() {
     return { opportunities, accounts: new Map(accounts.map((a) => [a.id, a])), users };
   });
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<OpportunityStatus | "">("");
+  const [stage, setStage] = useState<Stage | "">("");
   const [dealType, setDealType] = useState<DealType | "">("");
   const [manager, setManager] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -28,19 +28,18 @@ export default function OpportunitiesPage() {
     const q = query.trim().toLowerCase();
     return data.opportunities
       .filter((o) => showArchived || !o.archivedAt)
-      .filter((o) => !status || o.status === status)
+      .filter((o) => !stage || o.stage === stage)
       .filter((o) => !dealType || o.dealType === dealType)
       .filter((o) => !manager || o.managerId === manager)
       .filter((o) => !q || `${o.name} ${data.accounts.get(o.accountId)?.name ?? ""}`.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [data, query, status, dealType, manager, showArchived]);
+  }, [data, query, stage, dealType, manager, showArchived]);
 
   if (!data) return <p>Loading…</p>;
   const managers = data.users.filter((u) => u.role === "sales_manager");
 
   return (
     <section>
-      <CrmTabs />
       <div className="page-head">
         <h1>Opportunities</h1>
         <Link className="btn btn-primary" href="/crm/opportunities/new">
@@ -49,10 +48,10 @@ export default function OpportunitiesPage() {
       </div>
       <div className="filters" role="search">
         <input type="search" placeholder="Search name or account" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search opportunities" />
-        <select value={status} onChange={(e) => setStatus(e.target.value as OpportunityStatus | "")} aria-label="Status">
-          <option value="">All statuses</option>
-          {Object.entries(STATUS_LABEL).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
+        <select value={stage} onChange={(e) => setStage(e.target.value as Stage | "")} aria-label="Stage">
+          <option value="">All stages</option>
+          {STAGES.map((v) => (
+            <option key={v} value={v}>{v}</option>
           ))}
         </select>
         <select value={dealType} onChange={(e) => setDealType(e.target.value as DealType | "")} aria-label="Deal type">
@@ -79,10 +78,10 @@ export default function OpportunitiesPage() {
             <th>Account</th>
             <th>Deal type</th>
             <th>Manager</th>
+            <th className="num">ARR</th>
             <th className="num">TCV</th>
-            <th>Status</th>
-            <th>CRM close date</th>
-            <th>CRM stage</th>
+            <th>Stage</th>
+            <th>Close date</th>
           </tr>
         </thead>
         <tbody>
@@ -98,18 +97,12 @@ export default function OpportunitiesPage() {
                   {account?.name}
                   <span className="muted small"> · {account?.segment}, {account?.market}</span>
                 </td>
-                <td>
-                  {DEAL_TYPE_LABEL[o.dealType]}
-                  {o.dealType === "land_and_expand" ? <span className="muted small"> ({o.templateVariant})</span> : null}
-                </td>
+                <td>{DEAL_TYPE_LABEL[o.dealType]}</td>
                 <td>{data.users.find((u) => u.id === o.managerId)?.name}</td>
+                <td className="num">{o.arr === null ? "—" : formatMillions(o.arr)}</td>
                 <td className="num">{o.tcv === null ? "—" : formatMillions(o.tcv)}</td>
-                <td>
-                  {STATUS_LABEL[o.status]}
-                  {o.signedDate ? <span className="muted small"> · signed {formatDisplayDate(o.signedDate)}</span> : null}
-                </td>
-                <td>{o.closeDate ? formatDisplayDate(o.closeDate) : "—"}</td>
-                <td>{o.stage ?? "—"}</td>
+                <td>{o.stage}</td>
+                <td>{o.signedDate ? formatDisplayDate(o.signedDate) : o.closeDate ? formatDisplayDate(o.closeDate) : "—"}</td>
               </tr>
             );
           })}

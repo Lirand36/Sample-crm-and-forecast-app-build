@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { AppShell } from "@/features/shell/AppShell";
 import { StoreProvider } from "@/features/shell/StoreProvider";
-import { DemoNotice, Toolbar } from "@/features/shell/Toolbar";
+import { PRODUCT_NAME } from "@/features/shell/labels";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Signature Path Forecasting",
-  description: "Evidence-led quarterly signature forecast with a minimal CRM (demo).",
+  title: PRODUCT_NAME,
+  description: "CRM with an evidence-led quarterly signature forecast.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -14,11 +15,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <StoreProvider>
-          <Toolbar />
-          <main className="main">{children}</main>
-          <footer className="footer">
-            <DemoNotice />
-          </footer>
+          <AppShell>{children}</AppShell>
         </StoreProvider>
       </body>
     </html>

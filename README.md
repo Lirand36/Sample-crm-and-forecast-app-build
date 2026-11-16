@@ -2,7 +2,7 @@
 
 An evidence-led B2B forecast for quarterly signatures, with a minimal CRM as its system of record. It is one Next.js app with two areas, `/crm` and `/forecast`, deployed on Vercel's free tier.
 
-There is no database. Each browser keeps its own copy of the data in IndexedDB, seeded from bundled fictional fixtures, and **Reset** restores the seed. This is a single-presenter demo: the role switcher simulates the CRO / VP Sales, RevOps and two Sales Managers.
+There is no database. Each browser keeps its own copy of the data in IndexedDB, seeded from bundled fictional fixtures, and **Settings > Administration > Restore baseline data** restores it. This is a single-presenter demo: the "Signed in as" switcher simulates the CRO, the VP Sales, RevOps and two Sales Managers.
 
 ## Commands
 

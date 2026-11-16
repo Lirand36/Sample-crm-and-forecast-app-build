@@ -46,9 +46,10 @@ const d = (s: string): IsoDate => isoDate(s);
 
 export const USERS: User[] = [
   { id: "u-cro", name: "Morgan Reyes", role: "cro", team: null, managerId: null },
+  { id: "u-vp-sales", name: "Daniel Avraham", role: "vp_sales", team: "Europe", managerId: "u-cro" },
   { id: "u-revops", name: "Sam Ortiz", role: "revops", team: null, managerId: "u-cro" },
-  { id: "u-mgr-a", name: "Elena Ruiz", role: "sales_manager", team: "Southern Europe", managerId: "u-cro" },
-  { id: "u-mgr-b", name: "Jonas Weber", role: "sales_manager", team: "DACH", managerId: "u-cro" },
+  { id: "u-mgr-a", name: "Elena Ruiz", role: "sales_manager", team: "Southern Europe", managerId: "u-vp-sales" },
+  { id: "u-mgr-b", name: "Jonas Weber", role: "sales_manager", team: "DACH", managerId: "u-vp-sales" },
 ];
 
 const REVOPS = "u-revops";
@@ -188,9 +189,20 @@ export function mail(accountKey: string, local: string): string {
 
 // ---------- Opportunities (Part VII) ----------
 
+/**
+ * Revenue for each seeded deal: ARR × 36 months + non-recurring = the PRD §8 TCV exactly.
+ * Non-recurring (implementation and setup) is a tenth of TCV; ARR is the rest over three years.
+ */
+function revenue(tcvM: number | null) {
+  if (tcvM === null) return { arr: null, termMonths: null, nonRecurring: null };
+  const tcv = usdM(tcvM);
+  const nonRecurring = (tcv / 10) as Cents;
+  return { arr: (((tcv - nonRecurring) / 3) as Cents), termMonths: 36, nonRecurring };
+}
+
 function opp(
   key: string,
-  o: Pick<Opportunity, "dealType" | "templateVariant" | "status" | "managerId"> &
+  o: Pick<Opportunity, "dealType" | "templateVariant" | "status" | "managerId" | "stage"> &
     Partial<Omit<Opportunity, "createdAt" | "tcv">> & { tcvM: number | null; createdAt: string },
 ): Opportunity {
   const account = ACCOUNT_SEEDS.find((a) => a.key === key)!;
@@ -203,13 +215,14 @@ function opp(
     dealType: o.dealType,
     templateVariant: o.templateVariant,
     templateVersion: o.templateVariant === "none" ? null : 1,
+    ...revenue(o.tcvM),
     tcv: o.tcvM === null ? null : usdM(o.tcvM),
     currency: "USD",
     status: o.status,
     statusReason: o.statusReason ?? null,
     signedDate: o.signedDate ?? null,
     closeDate: o.closeDate ?? null,
-    stage: o.stage ?? null,
+    stage: o.stage,
     createdAt: d(o.createdAt),
     archivedAt: null,
   };
@@ -225,7 +238,7 @@ export const OPPORTUNITIES: Opportunity[] = [
   opp("savings", { dealType: "land_and_expand", templateVariant: "land", status: "open", managerId: MGR_A, tcvM: 1.0, createdAt: "2027-02-23", closeDate: d("2027-03-31"), stage: "Security review" }),
   opp("telecom", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_B, tcvM: 3.0, createdAt: "2026-11-30", closeDate: d("2027-03-31"), stage: "Contract" }),
   opp("natbank", { dealType: "major_accounts", templateVariant: "major_accounts", status: "open", managerId: MGR_A, tcvM: 4.0, createdAt: "2026-11-20", closeDate: d("2027-03-31"), stage: "Security review" }),
-  opp("travel", { dealType: "payg", templateVariant: "none", status: "open", managerId: MGR_A, tcvM: null, createdAt: "2027-02-01", closeDate: d("2027-03-31"), stage: "Negotiation" }),
+  opp("travel", { dealType: "payg", templateVariant: "none", status: "open", managerId: MGR_A, tcvM: null, createdAt: "2027-02-01", closeDate: d("2027-03-31"), stage: "Contract" }),
 ];
 
 export const DEAL_CONDITIONS: DealCondition[] = OPPORTUNITIES.filter((o) => o.templateVariant !== "none").flatMap((o) => {
@@ -821,9 +834,13 @@ export function buildCanonicalSeed(): Dataset {
   seq = built.nextSeq;
 
   const changeLog: ChangeLogEntry[] = [
+    change("chg-iberia-stage", "opp-iberia", "stage", "Contract", "Closed won", MGR_A, "2027-02-12", seq++),
     change("chg-iberia-status", "opp-iberia", "status", "open", "won", MGR_A, "2027-02-12", seq++),
     change("chg-iberia-signed", "opp-iberia", "signed_date", null, "2027-02-12", MGR_A, "2027-02-12", seq++),
+    change("chg-energy-arr", "opp-energy", "arr", String(revenue(3.0).arr), String(revenue(2.5).arr), MGR_B, "2027-02-23", seq++),
+    change("chg-energy-nrr", "opp-energy", "non_recurring", String(revenue(3.0).nonRecurring), String(revenue(2.5).nonRecurring), MGR_B, "2027-02-23", seq++),
     change("chg-energy-tcv", "opp-energy", "tcv", String(usdM(3.0)), String(usdM(2.5)), MGR_B, "2027-02-23", seq++),
+    change("chg-citytransit-stage", "opp-citytransit", "stage", "Contract", "Closed lost", MGR_B, "2027-02-25", seq++),
     change("chg-citytransit-status", "opp-citytransit", "status", "open", "lost", MGR_B, "2027-02-25", seq++),
   ];
 

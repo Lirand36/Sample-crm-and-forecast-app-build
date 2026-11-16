@@ -5,6 +5,7 @@
 import type { IsoDate } from "@/domain/dates";
 import {
   canEditRestrictedFields,
+  computeTcv,
   deriveTemplateVariant,
   normaliseDomain,
   OPPORTUNITY_LOG_FIELD,
@@ -21,9 +22,10 @@ import type {
   ContactRole,
   DealType,
   Opportunity,
-  OpportunityStatus,
+  Stage,
   User,
 } from "@/domain/entities";
+import { statusForStage } from "@/domain/entities";
 import type { Cents } from "@/domain/money";
 import { readSession, reserveSeq } from "./clock";
 import type { DataStore } from "./ports";
@@ -212,27 +214,31 @@ export async function updateContact(store: DataStore, id: string, input: Contact
 
 // ---------- Opportunities ----------
 
-export interface OpportunityCreateInput {
+export interface RevenueInput {
+  arr: Cents | null;
+  termMonths: number | null;
+  nonRecurring: Cents | null;
+}
+
+export interface OpportunityCreateInput extends RevenueInput {
   accountId: string;
   name: string;
   ownerName: string;
   managerId: string;
   dealType: DealType;
-  tcv: Cents | null;
   closeDate: IsoDate | null;
-  stage: string | null;
+  stage: Stage;
 }
 
-export interface OpportunityEditInput {
+export interface OpportunityEditInput extends RevenueInput {
   name: string;
   ownerName: string;
   managerId: string;
-  tcv: Cents | null;
-  status: OpportunityStatus;
+  /** The status follows from the stage. */
+  stage: Stage;
   statusReason: string | null;
   signedDate: IsoDate | null;
   closeDate: IsoDate | null;
-  stage: string | null;
 }
 
 export async function createOpportunity(store: DataStore, input: OpportunityCreateInput): Promise<CrmResult<Opportunity>> {
@@ -262,17 +268,21 @@ export async function createOpportunity(store: DataStore, input: OpportunityCrea
     dealType: input.dealType,
     templateVariant,
     templateVersion: template?.version ?? null,
-    tcv: input.tcv,
+    arr: input.arr,
+    termMonths: input.termMonths,
+    nonRecurring: input.nonRecurring,
+    tcv: computeTcv(input.arr, input.termMonths, input.nonRecurring),
     currency: "USD",
-    status: "open",
+    status: statusForStage(input.stage),
     statusReason: null,
     signedDate: null,
     closeDate: input.closeDate,
-    stage: input.stage?.trim() || null,
+    stage: input.stage,
     createdAt,
     archivedAt: null,
   };
   const errors = validateOpportunity(draft, { accounts, users });
+  if (draft.status !== "open") errors.stage = "A new deal starts in an open stage.";
   if (accounts.find((a) => a.id === draft.accountId)?.archivedAt) errors.accountId = "This Account is archived.";
   if (hasErrors(errors)) return fail(errors);
 
@@ -287,7 +297,11 @@ export async function createOpportunity(store: DataStore, input: OpportunityCrea
     opp.id,
     [
       { field: "created", oldValue: null, newValue: `${opp.name} (${templateVariant}${template ? ` v${template.version}` : ""})` },
+      { field: "arr", oldValue: null, newValue: opp.arr },
+      { field: "term_months", oldValue: null, newValue: opp.termMonths },
+      { field: "non_recurring", oldValue: null, newValue: opp.nonRecurring },
       { field: "tcv", oldValue: null, newValue: opp.tcv },
+      { field: "stage", oldValue: null, newValue: opp.stage },
       { field: "status", oldValue: null, newValue: opp.status },
       { field: "manager", oldValue: null, newValue: opp.managerId },
     ],
@@ -307,20 +321,24 @@ export async function updateOpportunity(
   const before = await store.repos.opportunities.get(id);
   if (!before) return fail({ form: "Opportunity not found." });
   if (before.archivedAt) return fail({ form: "This opportunity is archived and cannot be edited." });
+  const status = statusForStage(input.stage);
   const after: Opportunity = {
     ...before,
     name: input.name.trim(),
     ownerName: input.ownerName.trim(),
     managerId: input.managerId,
-    tcv: input.tcv,
-    status: input.status,
-    statusReason: input.status === "lost" || input.status === "disqualified" ? input.statusReason?.trim() || null : null,
-    signedDate: input.status === "won" ? input.signedDate : null,
+    arr: input.arr,
+    termMonths: input.termMonths,
+    nonRecurring: input.nonRecurring,
+    tcv: computeTcv(input.arr, input.termMonths, input.nonRecurring),
+    stage: input.stage,
+    status,
+    statusReason: status === "lost" || status === "disqualified" ? input.statusReason?.trim() || null : null,
+    signedDate: status === "won" ? input.signedDate : null,
     closeDate: input.closeDate,
-    stage: input.stage?.trim() || null,
   };
   if (restrictedFieldsChanged(before, after) && !canEditRestrictedFields(actor, before)) {
-    return fail({ form: "Only the deal's Sales Manager or RevOps may change TCV, status, signed date or manager (DR-04)." });
+    return fail({ form: "Only the deal's Sales Manager or RevOps may change revenue, close the deal, or change its signed date or manager (DR-04)." });
   }
   const [accounts, users] = await Promise.all([store.repos.accounts.list(), store.repos.users.list()]);
   const errors = validateOpportunity(after, { accounts, users });

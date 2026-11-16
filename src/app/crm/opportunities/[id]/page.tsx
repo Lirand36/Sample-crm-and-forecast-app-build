@@ -4,16 +4,24 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { archiveOpportunity, changeLogFor, updateOpportunity } from "@/application/crm";
-import { canEditRestrictedFields, DEAL_TYPE_LABEL, STATUS_LABEL } from "@/domain/crm-rules";
+import { canEditRestrictedFields, DEAL_TYPE_LABEL } from "@/domain/crm-rules";
 import { formatDisplayDate } from "@/domain/dates";
-import { CONDITION_LABEL, CONDITION_NUMBER } from "@/domain/entities";
+import { CONDITION_LABEL, CONDITION_NUMBER, type DealEvent } from "@/domain/entities";
 import { formatUsd } from "@/domain/money";
-import { ChangeHistory, CrmTabs, FormError, useStoreQuery } from "@/features/crm/ui";
+import { ChangeHistory, FormError, useStoreQuery } from "@/features/crm/ui";
 import { OpportunityForm } from "@/features/crm/OpportunityForm";
+import { SOURCE_LABEL } from "@/features/shell/labels";
 import { useStore } from "@/features/shell/StoreProvider";
 
-const SOURCE_LABEL = { seeded: "Seeded demo", manual: "Manual import", live: "Live" } as const;
-const ORIGIN_LABEL = { customer: "Customer", external: "External", internal: "Internal (claimed by us)" } as const;
+const EVENT_KIND: Record<DealEvent["channel"], string> = {
+  email: "Email",
+  document: "Document",
+  meeting: "Meeting",
+  news: "Announcement",
+  note: "Internal note",
+  paste: "Note",
+  crm: "Record change",
+};
 
 export default function OpportunityDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,21 +35,26 @@ export default function OpportunityDetailPage() {
     async (s) => {
       const opportunity = await s.repos.opportunities.get(id);
       if (!opportunity) return { opportunity: undefined } as const;
-      const [account, accounts, users, events, conditions, history] = await Promise.all([
+      const [account, accounts, users, events, conditions, templates, history] = await Promise.all([
         s.repos.accounts.get(opportunity.accountId),
         s.repos.accounts.list(),
         s.repos.users.list(),
         s.repos.events.list(),
         s.repos.dealConditions.list(),
+        s.repos.conditionTemplates.list(),
         changeLogFor(s, id),
       ]);
+      const template = templates.find((t) => t.variant === opportunity.templateVariant && t.version === opportunity.templateVersion);
       return {
         opportunity,
         account,
         accounts,
         users,
         history,
-        events: events.filter((e) => e.opportunityId === id).sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : a.occurredAt > b.occurredAt ? -1 : b.seq - a.seq)),
+        links: template?.links ?? [],
+        events: events
+          .filter((e) => e.opportunityId === id)
+          .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : a.occurredAt > b.occurredAt ? -1 : b.seq - a.seq)),
         conditions: conditions.filter((c) => c.opportunityId === id).sort((a, b) => CONDITION_NUMBER[a.type] - CONDITION_NUMBER[b.type]),
       };
     },
@@ -52,7 +65,6 @@ export default function OpportunityDetailPage() {
   if (!data.opportunity) {
     return (
       <section>
-        <CrmTabs />
         <h1>Opportunity not found</h1>
         <p>
           <Link href="/crm/opportunities">Back to opportunities</Link>
@@ -76,49 +88,24 @@ export default function OpportunityDetailPage() {
 
   return (
     <section>
-      <CrmTabs />
       <p className="crumbs">
         <Link href="/crm/opportunities">Opportunities</Link> /
       </p>
       <div className="page-head">
-        <h1>
-          {o.name} {o.archivedAt ? <span className="badge">Archived {formatDisplayDate(o.archivedAt)}</span> : null}
-        </h1>
+        <div>
+          <h1>
+            {o.name} {o.archivedAt ? <span className="badge">Archived {formatDisplayDate(o.archivedAt)}</span> : null}
+          </h1>
+          <p className="muted subtitle">
+            {data.account?.name} · {DEAL_TYPE_LABEL[o.dealType]} · <strong>{o.stage}</strong>
+          </p>
+        </div>
         {!o.archivedAt && !editing ? (
-          <div className="actions">
-            <button type="button" className="btn btn-primary" onClick={() => setEditing(true)}>
-              Edit
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setArchiving(true)}
-              disabled={!canArchive}
-              title={canArchive ? undefined : "Only the deal's Sales Manager or RevOps can archive it."}
-            >
-              Archive
-            </button>
-          </div>
+          <button type="button" className="btn btn-primary" onClick={() => setEditing(true)}>
+            Edit
+          </button>
         ) : null}
       </div>
-
-      {archiving ? (
-        <form className="form inline-form" onSubmit={submitArchive}>
-          <p>
-            Archiving removes this deal from the forecast. Nothing is deleted: the record, its Events and its history stay
-            visible here.
-          </p>
-          <FormError message={archiveError} />
-          <label className="field">
-            <span className="field-label">Reason</span>
-            <input value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} autoFocus />
-          </label>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-danger">Archive opportunity</button>
-            <button type="button" className="btn" onClick={() => setArchiving(false)}>Cancel</button>
-          </div>
-        </form>
-      ) : null}
 
       {editing ? (
         <OpportunityForm
@@ -139,61 +126,79 @@ export default function OpportunityDetailPage() {
           }}
         />
       ) : (
-        <dl className="details">
-          <div><dt>Account</dt><dd>{data.account?.name} <span className="muted small">· {data.account?.segment}, {data.account?.market}</span></dd></div>
-          <div><dt>Deal type</dt><dd>{DEAL_TYPE_LABEL[o.dealType]}{o.dealType === "land_and_expand" ? ` (${o.templateVariant} variant)` : ""}</dd></div>
-          <div><dt>Template</dt><dd>{o.templateVariant === "none" ? "None (PAYG is not forecast)" : `${o.templateVariant} v${o.templateVersion}`}</dd></div>
-          <div><dt>TCV</dt><dd>{o.tcv === null ? "—" : formatUsd(o.tcv)}</dd></div>
-          <div><dt>Status</dt><dd>{STATUS_LABEL[o.status]}{o.signedDate ? `, signed ${formatDisplayDate(o.signedDate)}` : ""}{o.statusReason ? ` — ${o.statusReason}` : ""}</dd></div>
-          <div><dt>Sales Manager</dt><dd>{manager?.name}{manager?.team ? ` (${manager.team})` : ""}</dd></div>
-          <div><dt>Owner</dt><dd>{o.ownerName}</dd></div>
-          <div><dt>CRM close date</dt><dd>{o.closeDate ? formatDisplayDate(o.closeDate) : "—"}</dd></div>
-          <div><dt>CRM stage</dt><dd>{o.stage ?? "—"}</dd></div>
-          <div><dt>Created</dt><dd>{formatDisplayDate(o.createdAt)}</dd></div>
-        </dl>
+        <div className="two-col">
+          <dl className="details">
+            <div><dt>Account</dt><dd>{data.account?.name} <span className="muted small">· {data.account?.segment}, {data.account?.market}</span></dd></div>
+            <div><dt>Deal type</dt><dd>{DEAL_TYPE_LABEL[o.dealType]}{o.templateVariant === "expand" ? <span className="muted small"> · expansion of an existing customer</span> : null}</dd></div>
+            <div><dt>Stage</dt><dd>{o.stage}{o.statusReason ? <span className="muted small"> · {o.statusReason}</span> : null}</dd></div>
+            <div><dt>{o.signedDate ? "Signed" : "Close date"}</dt><dd>{o.signedDate ? formatDisplayDate(o.signedDate) : o.closeDate ? formatDisplayDate(o.closeDate) : "—"}</dd></div>
+            <div><dt>Sales Manager</dt><dd>{manager?.name}{manager?.team ? ` (${manager.team})` : ""}</dd></div>
+            <div><dt>Owner</dt><dd>{o.ownerName}</dd></div>
+            <div><dt>Created</dt><dd>{formatDisplayDate(o.createdAt)}</dd></div>
+          </dl>
+          <dl className="details revenue">
+            <div><dt>ARR</dt><dd>{o.arr === null ? "—" : formatUsd(o.arr)}</dd></div>
+            <div><dt>Initial term</dt><dd>{o.termMonths === null ? "—" : `${o.termMonths} months`}</dd></div>
+            <div><dt>Non-recurring</dt><dd>{o.nonRecurring === null ? "—" : formatUsd(o.nonRecurring)}</dd></div>
+            <div className="tcv"><dt>TCV</dt><dd>{o.tcv === null ? "—" : formatUsd(o.tcv)}</dd></div>
+          </dl>
+        </div>
       )}
 
-      <p className="muted small">The forecast Deal screen for this opportunity arrives in Phase 8.</p>
-
+      <h2>Path to signature</h2>
       {data.conditions.length ? (
         <>
-          <h2>Conditions before signature</h2>
-          <p className="muted small">Their state comes from Evidence and is shown on the forecast Deal screen; the CRM only holds the template and owners.</p>
-          <ol className="conditions">
-            {data.conditions.map((c) => (
-              <li key={c.id} value={CONDITION_NUMBER[c.type]}>
-                {CONDITION_LABEL[c.type]} <span className="muted small">· owner: {c.owner}</span>
-              </li>
-            ))}
+          <p className="muted section-intro">
+            What has to happen on the customer&apos;s side before this contract can be signed. The Forecast app tracks each
+            step from the activity below and works out whether the deal can sign this quarter.
+          </p>
+          <ol className="path">
+            {data.conditions.map((c) => {
+              const waits = data.links.filter((l) => l.to === c.type);
+              return (
+                <li key={c.id} value={CONDITION_NUMBER[c.type]}>
+                  <span className="path-step">{CONDITION_LABEL[c.type]}</span>
+                  <span className="muted small">
+                    {" "}· {c.owner}
+                    {waits.length
+                      ? ` · after ${waits.map((l) => `${CONDITION_LABEL[l.from].toLowerCase()}${l.strength === "soft" ? " (can run in parallel)" : ""}`).join(", ")}`
+                      : ""}
+                  </span>
+                </li>
+              );
+            })}
           </ol>
         </>
-      ) : null}
+      ) : (
+        <p className="muted section-intro">Pay-as-you-go deals commit no fixed value, so they have no signature path and are not forecast.</p>
+      )}
 
-      <h2>Events ({data.events.length})</h2>
-      <p className="muted small">Read-only. Events arrive through seeded data or manual import and are never typed into the CRM.</p>
+      <h2>Activity ({data.events.length})</h2>
+      <p className="muted section-intro">
+        Emails, documents and announcements received on this deal. The Forecast app reads them as evidence for the steps
+        above.
+      </p>
       {data.events.length === 0 ? (
-        <p className="muted">No Events on this opportunity.</p>
+        <p className="muted">No activity on this deal yet.</p>
       ) : (
         <table className="table compact">
           <thead>
             <tr>
               <th>Date</th>
-              <th>Source</th>
-              <th>Origin</th>
+              <th>Type</th>
               <th>From</th>
-              <th>Text</th>
+              <th>Content</th>
             </tr>
           </thead>
           <tbody>
             {data.events.map((e) => (
               <tr key={e.id}>
-                <td>{formatDisplayDate(e.occurredAt)}</td>
+                <td className="nowrap">{formatDisplayDate(e.occurredAt)}</td>
                 <td>
-                  <span className="badge">{SOURCE_LABEL[e.sourceLabel]}</span>
-                  <div className="muted small">{e.sourceType.replace(/_/g, " ")}</div>
+                  {EVENT_KIND[e.channel]}
+                  <div className="muted small">{SOURCE_LABEL[e.sourceLabel]}</div>
                 </td>
-                <td>{ORIGIN_LABEL[e.origin]}</td>
-                <td className="small">{e.sender ?? "—"}</td>
+                <td className="small">{e.sender ?? "—"}{e.origin === "internal" ? <div className="muted">our team</div> : null}</td>
                 <td>
                   {e.subject ? <strong>{e.subject}: </strong> : null}
                   {e.text}
@@ -206,6 +211,39 @@ export default function OpportunityDetailPage() {
 
       <h2>Change history</h2>
       <ChangeHistory entries={data.history} users={data.users} />
+
+      {!o.archivedAt ? (
+        <div className="more-actions">
+          {archiving ? (
+            <form className="form" onSubmit={submitArchive}>
+              <p>
+                Archive this opportunity if it should not be in the pipeline at all, for example a duplicate or a record
+                created by mistake. It leaves the forecast; the record and its history are kept. To record a loss, set the
+                stage to Closed lost instead.
+              </p>
+              <FormError message={archiveError} />
+              <label className="field">
+                <span className="field-label">Reason</span>
+                <input value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} autoFocus />
+              </label>
+              <div className="form-actions">
+                <button type="submit" className="btn btn-danger">Archive opportunity</button>
+                <button type="button" className="btn" onClick={() => setArchiving(false)}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => setArchiving(true)}
+              disabled={!canArchive}
+              title={canArchive ? undefined : "Only the deal's Sales Manager or RevOps can archive it."}
+            >
+              Archive this opportunity…
+            </button>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

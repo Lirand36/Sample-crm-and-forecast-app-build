@@ -48,8 +48,7 @@ export default function ForecastPage() {
     <section>
       <h1>Forecast</h1>
       <p className="muted">
-        {summary.quarter ? `${summary.quarter.label}, ending ${formatDisplayDate(summary.quarter.end)}.` : "No quarter configured."}{" "}
-        The forecast engine arrives in Phase 4; this page shows the stored data it will read.
+        {summary.quarter ? `${summary.quarter.label} · quarter ends ${formatDisplayDate(summary.quarter.end)}` : "No quarter configured."}
       </p>
       <dl className="facts">
         <div>
@@ -65,7 +64,7 @@ export default function ForecastPage() {
           <dd>{summary.evidence}</dd>
         </div>
       </dl>
-      <h2>Stored Forecast runs</h2>
+      <h2>Forecast runs</h2>
       <table className="table">
         <thead>
           <tr>
@@ -81,7 +80,7 @@ export default function ForecastPage() {
           {summary.runs.map((r) => (
             <tr key={r.id}>
               <td>{formatDisplayDate(r.asOfDate)}</td>
-              <td>{r.isFixture ? "Seeded demo run" : r.trigger}</td>
+              <td>{r.trigger === "submission" ? "Submission" : "Weekly run"}</td>
               <td className="num">{formatMillions(r.totals.conservative)}</td>
               <td className="num">{formatMillions(r.totals.core)}</td>
               <td className="num">{formatMillions(r.totals.stretch)}</td>

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createOpportunity } from "@/application/crm";
-import { CrmTabs, useStoreQuery } from "@/features/crm/ui";
+import { useStoreQuery } from "@/features/crm/ui";
 import { OpportunityForm } from "@/features/crm/OpportunityForm";
 import { useStore } from "@/features/shell/StoreProvider";
 
@@ -14,11 +14,7 @@ export default function NewOpportunityPage() {
 
   return (
     <section>
-      <CrmTabs />
       <h1>New opportunity</h1>
-      <p className="muted">
-        One opportunity is one contract. Its Conditions come from the deal type&apos;s template, fixed at creation.
-      </p>
       <OpportunityForm
         mode="create"
         accounts={data.accounts}

@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { DataStore } from "@/application/ports";
 import { formatDisplayDate, isIsoDate, type IsoDate } from "@/domain/dates";
@@ -24,21 +22,6 @@ export function useStoreQuery<T>(load: (store: DataStore) => Promise<T>, deps: r
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, revision, ...deps]);
   return data;
-}
-
-const CRM_TABS = [{ href: "/crm/opportunities", label: "Opportunities" }];
-
-export function CrmTabs() {
-  const pathname = usePathname();
-  return (
-    <nav className="subnav" aria-label="CRM">
-      {CRM_TABS.map((t) => (
-        <Link key={t.href} href={t.href} className={pathname?.startsWith(t.href) ? "subnav-link active" : "subnav-link"}>
-          {t.label}
-        </Link>
-      ))}
-    </nav>
-  );
 }
 
 export function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: ReactNode }) {
@@ -111,7 +94,7 @@ export function ChangeHistory({ entries, users }: { entries: ChangeLogEntry[]; u
 
 function displayLogValue(field: string, value: string | null, users: User[]): string {
   if (value === null) return "—";
-  if (field === "tcv") return formatUsd(cents(Number(value)));
+  if (field === "tcv" || field === "arr" || field === "non_recurring") return formatUsd(cents(Number(value)));
   if (field === "manager") return users.find((u) => u.id === value)?.name ?? value;
   if (/date|_at$/.test(field) && isIsoDate(value)) return formatDisplayDate(value);
   return value;

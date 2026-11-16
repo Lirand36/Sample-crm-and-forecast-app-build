@@ -33,6 +33,23 @@ describe("canonical seed (PRD §8 as changed by handoff Part VII)", () => {
     expect(seed.opportunities.find((o) => o.id === "opp-iberia")?.signedDate).toBe("2027-02-12");
   });
 
+  it("has the CRO and the VP Sales as two different people; managers report to the VP Sales", () => {
+    const cro = seed.users.find((u) => u.role === "cro")!;
+    const vp = seed.users.find((u) => u.role === "vp_sales")!;
+    expect(cro.id).not.toBe(vp.id);
+    expect(vp.managerId).toBe(cro.id);
+    for (const m of seed.users.filter((u) => u.role === "sales_manager")) expect(m.managerId).toBe(vp.id);
+  });
+
+  it("has revenue that adds up and a stage that matches the status", async () => {
+    const { computeTcv } = await import("@/domain/crm-rules");
+    const { statusForStage } = await import("@/domain/entities");
+    for (const o of seed.opportunities) {
+      expect(computeTcv(o.arr, o.termMonths, o.nonRecurring)).toBe(o.tcv);
+      expect(statusForStage(o.stage)).toBe(o.status);
+    }
+  });
+
   it("satisfies Part IV CRM validations", () => {
     for (const o of seed.opportunities) {
       if (o.status === "open" && o.dealType !== "payg") expect(o.tcv).toBeGreaterThan(0);

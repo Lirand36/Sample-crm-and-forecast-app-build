@@ -8,8 +8,11 @@ export type Id = string;
 
 // ---------- Roles and users ----------
 
-/** Part IV user roles. Per Liran's G-1 decision the CRO role is the VP Sales. */
-export type UserRole = "sales_manager" | "revops" | "cro";
+/**
+ * Part IV user roles, plus the VP Sales (Liran, 16 Nov): a separate person from the CRO who
+ * holds the G-1 right to reject Evidence that is already confirmed or approved.
+ */
+export type UserRole = "sales_manager" | "revops" | "vp_sales" | "cro";
 
 export interface User {
   id: Id;
@@ -49,6 +52,18 @@ export type DealType = "major_accounts" | "land_and_expand" | "payg";
 export type TemplateVariant = "major_accounts" | "land" | "expand" | "none";
 export type OpportunityStatus = "open" | "won" | "lost" | "disqualified";
 
+export const OPEN_STAGES = ["Discovery", "Pilot", "Evaluation", "Security review", "Contract"] as const;
+export const CLOSED_STAGES = ["Closed won", "Closed lost", "Disqualified"] as const;
+export const STAGES = [...OPEN_STAGES, ...CLOSED_STAGES] as const;
+export type Stage = (typeof STAGES)[number];
+
+export function statusForStage(stage: Stage): OpportunityStatus {
+  if (stage === "Closed won") return "won";
+  if (stage === "Closed lost") return "lost";
+  if (stage === "Disqualified") return "disqualified";
+  return "open";
+}
+
 export interface Opportunity {
   id: Id;
   accountId: Id;
@@ -59,14 +74,25 @@ export interface Opportunity {
   /** Fixed at creation (DR-07). "none" for PAYG, which has no Conditions. */
   templateVariant: TemplateVariant;
   templateVersion: number | null;
-  /** Integer cents; null allowed only for PAYG. */
+  /** Annual recurring revenue, integer cents. Null only for PAYG. */
+  arr: Cents | null;
+  /** Initial contract term in whole months. Null only for PAYG. */
+  termMonths: number | null;
+  /** One-off fees (implementation, setup), integer cents. Null only for PAYG. */
+  nonRecurring: Cents | null;
+  /**
+   * TCV = ARR × term / 12 + non-recurring (PRD §3: committed value over the initial term).
+   * Always derived from the three fields above by the CRM service; stored because the engine reads it.
+   */
   tcv: Cents | null;
   currency: "USD";
+  /** Derived from the stage (Liran, 16 Nov): closed stages set Won, Lost or Disqualified. */
   status: OpportunityStatus;
   statusReason: string | null;
   signedDate: IsoDate | null;
   closeDate: IsoDate | null; // display only
-  stage: string | null; // display only
+  /** The single pipeline field users edit. Open stages are display only; the engine reads only the status they imply. */
+  stage: Stage;
   /** G-3: technical field needed to fix the land/expand variant at creation. */
   createdAt: IsoDate;
   archivedAt: IsoDate | null;
