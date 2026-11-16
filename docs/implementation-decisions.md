@@ -86,3 +86,15 @@ If no row matches, the Condition has no estimate ("no planning standard", DR-08)
 | T-10 | Domain purity enforced by ESLint (no UI, storage, platform imports; no `Date`, `fetch`, `process`, `Math.random`) and by a test | Part V non-negotiable engine properties. |
 | T-11 | Dates are `YYYY-MM-DD` strings with pure calendar arithmetic (no `Date` object); money is integer cents | Part V. Avoids time-zone drift; the quarter's reporting time zone is stored for display. |
 | T-12 | The role switcher stores the acting user in the browser store; the CRO is labelled "CRO / VP Sales" | DR-16 single-presenter demo; G-1. |
+
+## C. Phase 2 CRM decisions
+
+| # | Decision | Reason |
+|---|---|---|
+| P2-1 | Archiving an Opportunity needs the same right as editing its status: the deal's Sales Manager or RevOps. A reason is required. | Archiving removes the deal from the forecast (C-3), so it carries the same weight as a status change. DR-04 lists no archive right of its own. |
+| P2-2 | Fields outside DR-04's list (name, owner, CRM close date, CRM stage) can be edited by any role. | Part IV puts permissions beyond DR-04 out of scope. The engine never reads these fields. |
+| P2-3 | Every CRM edit is logged field by field with author, simulated date and an optional note, including creation and archive. Only TCV, status, signed date, manager and archive count as bridge causes. | DR-13 says every edit is logged. Restricting bridge causes keeps the bridge focused on what can move the number. |
+| P2-4 | Changing status away from Won clears the signed date; changing away from Lost or Disqualified clears the reason. | A stale signed date on a non-Won deal would be read as a data error. |
+| P2-5 | An Account's email domains must be valid and unique across Accounts. They are stored lower-case, without a leading "@". | DR-05 derives an email's origin from the sender's domain. A domain shared by two Accounts would make that derivation ambiguous. |
+| P2-6 | Only RevOps can archive an Account, and only when it has no open opportunities. | Archiving an Account hides it from pick lists. Doing that while it has open deals would orphan them. |
+| P2-7 | Deal type and template variant cannot be edited after creation. | DR-07 fixes the variant at creation. Changing the deal type would change the template. |
