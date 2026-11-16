@@ -136,6 +136,21 @@ check("National Bank: security blocked until Mar 16", path.includes("Blocked unt
 check("National Bank: 5 of 7 steps ticked", (await page.locator(".tick.ticked").count()) === 5);
 check("Big Deal National Bank is $20M", (await page.locator(".details.revenue").innerText()).includes("$20,000,000"));
 
+// Evidence review: the VP Sales overturns National Bank's confirmed block (test 9)
+await role.selectOption("u-vp-sales");
+await page.getByRole("link", { name: "Evidence review" }).click();
+await page.getByRole("heading", { level: 1, name: "Evidence review" }).waitFor();
+const blockRow = page.locator("tr", { hasText: "National Bank" }).filter({ hasText: "risk committee" });
+await blockRow.getByRole("button", { name: "Overturn…" }).click();
+await blockRow.getByLabel("Reason to overturn").fill("Committee date not final");
+await blockRow.getByRole("button", { name: "Reject" }).click();
+await page.locator("tr", { hasText: "Committee date not final" }).waitFor();
+check("VP Sales rejection is logged with the reason", (await page.locator("tr", { hasText: "Committee date not final" }).innerText()).includes("Daniel Avraham"));
+await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
+await page.getByTestId("stretch").waitFor();
+// $49.5M on the baseline, plus the $0.5M Retail TCV edit made earlier in this script.
+check("test 9: Stretch rises by National Bank's $20M to $50.0M", (await page.getByTestId("stretch").innerText()) === "$50.0M", await page.getByTestId("stretch").innerText());
+
 await page.getByRole("link", { name: "Administration" }).click();
 await page.getByTestId("reset-start").click();
 await page.getByTestId("reset").click();

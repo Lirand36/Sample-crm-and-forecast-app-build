@@ -17,7 +17,10 @@ const CRM_NAV: NavItem[] = [
   { href: "/crm/accounts", label: "Accounts" },
   { href: "/crm/contacts", label: "Contacts" },
 ];
-const APPS_NAV: NavItem[] = [{ href: "/forecast", label: "Forecast" }];
+const APPS_NAV: NavItem[] = [
+  { href: "/forecast", label: "Forecast" },
+  { href: "/evidence", label: "Evidence review" },
+];
 const ADMIN_NAV: NavItem[] = [{ href: "/admin", label: "Administration" }];
 
 function NavSection({ title, items, pathname }: { title: string; items: NavItem[]; pathname: string | null }) {

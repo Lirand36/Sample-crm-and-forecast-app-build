@@ -9,8 +9,8 @@ Read this first when resuming. Each line is a pushed, tested piece.
 - [x] Eligibility, Commitment (PRD §4H, DR-02 wording, expand variant), Group (PRD §4I, DR-08), Scenario totals. `src/domain/classification.ts`. Tests: `tests/unit/classification.test.ts`: every deal's group, $13.5M / $26.0M / $29.5M at Mar 1 and Mar 8. Manager closing a Contrary signal is not built yet (no entity).
 - [x] Live forecast aggregate `src/domain/forecast.ts`, disputes `src/domain/disputes.ts` (stale rules, Bet missed), service `src/application/forecast.ts`. Forecast home (`src/app/forecast/page.tsx`): number block, Manager commitment box, Downside exposure, Ready not committed, by-manager table, Deals table, stored runs. Tests: `tests/unit/forecast.test.ts` ($51.0M at Mar 1, $36.0M at Mar 8).
 - [x] Forecast deal screen `src/app/forecast/deals/[id]/page.tsx`: verdict, commitment, three planned dates vs quarter end, path calendar, steps with evidence (grade, status, quote) and planning standard.
-- [ ] Next: Evidence review queue (approve / confirm / reject per DR-04 and G-1), then Interventions (latest viable dates, start-by, preview; DR-09) and Recoverable.
-- [ ] Evidence review queue (DR-04 rights, G-1).
+- [x] Evidence review: rights `src/domain/evidence-review.ts` (DR-04, G-1), service `src/application/evidence.ts`, page `/evidence` (queue with overdue flag, review log, VP Sales overturn). Test 9 passes (Stretch $49.5M, spec $15.5M).
+- [ ] Next: Interventions (latest viable dates, start-by, preview; DR-09) and Recoverable.
 - [ ] Raise and withdraw Disputes from the UI, Bet acceptance check.
 - [ ] Stored runs, movement bridge (DR-14), Submissions (C-1).
 - [ ] Interventions and latest viable dates (§4G.5).

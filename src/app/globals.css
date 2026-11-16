@@ -924,3 +924,47 @@ tr.archived td {
     margin-left: 130px;
   }
 }
+
+.review-list {
+  display: grid;
+  gap: 10px;
+  max-width: 900px;
+}
+
+.review-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.review-card.provisional {
+  border-left-color: var(--danger);
+}
+
+.review-claim {
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.review-actions input {
+  font: inherit;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-width: 220px;
+}
+
+.badge.overdue {
+  background: #f6e1e1;
+  color: var(--danger);
+}
