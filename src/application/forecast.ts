@@ -1,6 +1,6 @@
 // Loads everything the engine needs and computes the live forecast as of the session date.
 
-import { computeForecast, type Forecast, type ForecastInput } from "@/domain/forecast";
+import { computeForecast, type Forecast, type ForecastInput, type InterventionPreview } from "@/domain/forecast";
 import { readSession } from "./clock";
 import type { DataStore } from "./ports";
 
@@ -8,7 +8,10 @@ export async function loadForecast(store: DataStore): Promise<Forecast> {
   return (await loadForecastWithData(store)).forecast;
 }
 
-export async function loadForecastWithData(store: DataStore): Promise<{ forecast: Forecast; data: ForecastInput }> {
+export async function loadForecastWithData(
+  store: DataStore,
+  preview?: InterventionPreview,
+): Promise<{ forecast: Forecast; data: ForecastInput; preview: Forecast | null }> {
   const r = store.repos;
   const [session, quarters, opportunities, accounts, dealConditions, conditionTemplates, dealLinkOverrides, events, evidence,
     evidenceDecisions, conditionWaivers, pilotPlans, pilotReadings, planningStandards, disputes, quarterTargets] = await Promise.all([
@@ -21,5 +24,9 @@ export async function loadForecastWithData(store: DataStore): Promise<{ forecast
   if (!quarter) throw new Error("No quarter configured");
   const data: ForecastInput = { opportunities, accounts, dealConditions, conditionTemplates, dealLinkOverrides, events, evidence,
     evidenceDecisions, conditionWaivers, pilotPlans, pilotReadings, planningStandards, disputes, quarterTargets };
-  return { forecast: computeForecast(data, session.asOfDate, quarter), data };
+  return {
+    forecast: computeForecast(data, session.asOfDate, quarter),
+    data,
+    preview: preview ? computeForecast(data, session.asOfDate, quarter, preview) : null,
+  };
 }

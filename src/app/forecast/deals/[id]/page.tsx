@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import { loadForecastWithData } from "@/application/forecast";
 import { evidenceStatus, gradeOf, type ConditionState, type EvidenceStatus } from "@/domain/condition-state";
 import { compareDates, daysBetween, formatDisplayDate, maxDate, type IsoDate } from "@/domain/dates";
@@ -41,12 +42,16 @@ const d = (x: IsoDate | null) => (x ? formatDisplayDate(x) : "—");
 
 export default function ForecastDealPage() {
   const { id } = useParams<{ id: string }>();
+  const [previewing, setPreviewing] = useState<ConditionType | null>(null);
   const result = useStoreQuery(async (s) => {
-    const [{ forecast, data }, users] = await Promise.all([loadForecastWithData(s), s.repos.users.list()]);
-    return { forecast, data, users };
-  }, [id]);
+    const [{ forecast, data, preview }, users] = await Promise.all([
+      loadForecastWithData(s, previewing ? { opportunityId: id, condition: previewing } : undefined),
+      s.repos.users.list(),
+    ]);
+    return { forecast, data, users, preview };
+  }, [id, previewing]);
   if (!result) return <p>Loading…</p>;
-  const { forecast: f, data, users } = result;
+  const { forecast: f, data, users, preview } = result;
   const line = f.lines.find((l) => l.view.opportunity.id === id);
   if (!line) return <p>Deal not found. <Link href="/forecast">Back to Forecast</Link></p>;
 
@@ -137,6 +142,49 @@ export default function ForecastDealPage() {
           <PathCalendar steps={view.timing.steps.filter((s) => !["done", "waived"].includes(stateOf(s.type).state))} asOf={f.asOf} qe={qe} links={view.links} />
         </>
       )}
+
+      {evaluated && !["signed", "firm", "core"].includes(line.group) ? (
+        <>
+          <h2>Forecast Interventions</h2>
+          {line.interventions.length === 0 ? (
+            <p className="muted section-intro">
+              {line.commitment?.level !== "committed"
+                ? `No intervention: this deal's problem is commitment (${line.commitment?.missing.join("; ") || "not committed"}), not timing.`
+                : `No step can be started in parallel to bring this deal into the quarter. Planned signature at standard pace: ${d(view.timing.esd.standard)}.`}
+            </p>
+          ) : (
+            line.interventions.map((i) => {
+              const owner = owners.get(i.condition);
+              const p = previewing === i.condition && preview ? preview : null;
+              return (
+                <div key={i.condition} className="intervention">
+                  <div>
+                    <strong>Start {CONDITION_LABEL[i.condition].toLowerCase()} now</strong>, in parallel with{" "}
+                    {i.lifted.map((t) => CONDITION_LABEL[t].toLowerCase()).join(" and ")}. Ask {owner ? owner.toLowerCase() : "the customer"} to begin by{" "}
+                    <strong>{d(i.startBy)}</strong>.
+                  </div>
+                  <div className="muted small">
+                    Result: {GROUP_LABEL[i.result.group]}, planned signature {d(i.timing.esd.fast)} / {d(i.timing.esd.standard)} / {d(i.timing.esd.slow)}.
+                  </div>
+                  <div className="review-actions">
+                    {previewing === i.condition ? (
+                      <button type="button" className="btn" onClick={() => setPreviewing(null)}>Close preview</button>
+                    ) : (
+                      <button type="button" className="btn btn-primary" onClick={() => setPreviewing(i.condition)}>Preview</button>
+                    )}
+                  </div>
+                  {p ? (
+                    <div className="preview-box" data-testid="preview">
+                      Preview, nothing saved. System forecast {formatMillions(f.company.core)} → <strong>{formatMillions(p.company.core)}</strong> (Conservative{" "}
+                      {formatMillions(p.company.conservative)}, Stretch {formatMillions(p.company.stretch)}), target {f.company.target === null ? "—" : formatMillions(f.company.target)}.
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+        </>
+      ) : null}
 
       <h2>Steps and evidence</h2>
       <table className="table compact">

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { loadForecast } from "@/application/forecast";
 import { formatDisplayDate } from "@/domain/dates";
-import type { Group } from "@/domain/entities";
+import { CONDITION_LABEL, type Group } from "@/domain/entities";
 import type { ForecastLine } from "@/domain/forecast";
 import { formatMillions, type Cents } from "@/domain/money";
 import { useStoreQuery } from "@/features/crm/ui";
@@ -74,6 +74,15 @@ export default function ForecastHome() {
           hint="Counted in the system forecast but not Firm."
           lines={f.downside}
           detail={(l) => l.reasons[0] ?? ""}
+        />
+        <StakeList
+          title="Recoverable"
+          hint="Outside the forecast, but one step started in parallel would bring it in. Shown, never counted."
+          lines={f.recoverable}
+          detail={(l) => {
+            const i = l.interventions[0]!;
+            return `start ${CONDITION_LABEL[i.condition].toLowerCase()} by ${formatDisplayDate(i.startBy)}`;
+          }}
         />
         <StakeList
           title="Ready, not committed"

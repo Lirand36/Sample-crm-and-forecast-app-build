@@ -94,6 +94,8 @@ export interface DealTimingInput {
   pilotPlan: PilotPlan | null;
   asOf: IsoDate;
   quarterEnd: IsoDate;
+  /** Intervention preview: lift every soft Link into this Condition (PRD §4G.6). Hard Links are never lifted. */
+  liftSoftLinksInto?: ConditionType;
 }
 
 export type Readiness = TimingCase | "not_ready";
@@ -153,7 +155,7 @@ export function dealTiming(input: DealTimingInput): DealTiming {
     const hasStarted = state.spanStart !== null;
     const preds = input.links
       .filter((l) => l.to === type && byType.has(l.from))
-      .filter((l) => l.strength === "hard" || !hasStarted)
+      .filter((l) => l.strength === "hard" || (!hasStarted && input.liftSoftLinksInto !== type))
       .map((l) => visit(l.from, stack));
 
     const start = perCase((c): IsoDate | null => {
@@ -207,4 +209,39 @@ export function dealTiming(input: DealTimingInput): DealTiming {
     if (blocked) missingFast = { type: blocked.type, reason: "overdue" };
   }
   return { steps: ordered, esd, readiness, missingFast };
+}
+
+/**
+ * Latest viable date of each open Condition: quarter end minus the largest sum of standard remaining days
+ * along any chain of Conditions that must follow it (PRD §4G.5). Done steps contribute nothing.
+ */
+export function latestViableDates(
+  timing: DealTiming,
+  links: readonly TemplateLink[],
+  quarterEnd: IsoDate,
+): Map<ConditionType, IsoDate | null> {
+  const remaining = new Map(timing.steps.map((s) => [s.type, s.remaining.standard]));
+  const memo = new Map<ConditionType, number | null>();
+  // Longest standard-pace chain strictly after `type`; null if any step on it has no estimate.
+  const after = (type: ConditionType): number | null => {
+    if (memo.has(type)) return memo.get(type)!;
+    let best = 0;
+    for (const l of links.filter((x) => x.from === type && remaining.has(x.to))) {
+      const r = remaining.get(l.to)!;
+      const rest = after(l.to);
+      if (typeof r !== "number" || rest === null) {
+        memo.set(type, null);
+        return null;
+      }
+      best = Math.max(best, r + rest);
+    }
+    memo.set(type, best);
+    return best;
+  };
+  const out = new Map<ConditionType, IsoDate | null>();
+  for (const s of timing.steps) {
+    const tail = after(s.type);
+    out.set(s.type, tail === null ? null : addDays(quarterEnd, -tail));
+  }
+  return out;
 }

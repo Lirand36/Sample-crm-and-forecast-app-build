@@ -18,7 +18,7 @@ import type {
   TemplateLink,
 } from "./entities";
 import { CONDITION_NUMBER } from "./entities";
-import { dealTiming, type DealTiming } from "./timing";
+import { dealTiming, type DealTiming, type DealTimingInput } from "./timing";
 
 export interface ForecastData {
   opportunities: readonly Opportunity[];
@@ -41,6 +41,8 @@ export interface DealView {
   states: ConditionState[];
   links: TemplateLink[];
   timing: DealTiming;
+  /** The inputs the timing was computed from, so an Intervention can rerun the path. */
+  timingInput: DealTimingInput;
 }
 
 /** Template links with this deal's overrides applied (DR-07; latest override per link wins). */
@@ -75,7 +77,7 @@ export function dealView(data: ForecastData, opportunityId: string, asOf: IsoDat
       ),
     );
   const links = linksFor(data, opportunity);
-  const timing = dealTiming({
+  const timingInput: DealTimingInput = {
     dealType: opportunity.dealType,
     segment: account?.segment ?? "",
     states,
@@ -84,6 +86,6 @@ export function dealView(data: ForecastData, opportunityId: string, asOf: IsoDat
     pilotPlan,
     asOf,
     quarterEnd,
-  });
-  return { opportunity, account, states, links, timing };
+  };
+  return { opportunity, account, states, links, timing: dealTiming(timingInput), timingInput };
 }

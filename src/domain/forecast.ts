@@ -7,12 +7,17 @@ import { dealView, type DealView, type ForecastData } from "./deal-view";
 import { disputeStatus, managerCommitment, type DisputeStatus } from "./disputes";
 import type { Dispute, Quarter, QuarterTarget } from "./entities";
 import type { Cents } from "./money";
+import { interventionsFor, type Intervention } from "./interventions";
+import type { ConditionType } from "./entities";
 
 export interface ForecastLine extends Classification {
   view: DealView;
   tcv: Cents | null;
   managerId: string;
   dispute: { dispute: Dispute; status: DisputeStatus } | null;
+  interventions: Intervention[];
+  /** Set when this line shows an Intervention preview instead of the live result. */
+  previewing: ConditionType | null;
 }
 
 export interface ManagerRow extends ScenarioTotals {
@@ -30,6 +35,14 @@ export interface Forecast {
   managers: ManagerRow[];
   downside: ForecastLine[];
   readyNotCommitted: ForecastLine[];
+  /** Deals outside Core that an Intervention moves into Firm or Core. Shown, never counted. */
+  recoverable: ForecastLine[];
+}
+
+/** Preview one Intervention: nothing is stored (PRD §5 Deal block 5). */
+export interface InterventionPreview {
+  opportunityId: string;
+  condition: ConditionType;
 }
 
 export interface ForecastInput extends ForecastData {
@@ -49,10 +62,14 @@ function rollup(lines: ForecastLine[], managerId: string | null, targets: readon
   };
 }
 
-export function computeForecast(data: ForecastInput, asOf: IsoDate, quarter: Quarter): Forecast {
+export function computeForecast(data: ForecastInput, asOf: IsoDate, quarter: Quarter, preview?: InterventionPreview): Forecast {
   const lines: ForecastLine[] = data.opportunities.map((o) => {
-    const view = dealView(data, o.id, asOf, quarter.end)!;
-    const c = classify(view, data, asOf, quarter);
+    const live = dealView(data, o.id, asOf, quarter.end)!;
+    const liveClass = classify(live, data, asOf, quarter);
+    const interventions = interventionsFor(live, liveClass, data, asOf, quarter);
+    const chosen = preview?.opportunityId === o.id ? interventions.find((i) => i.condition === preview.condition) : undefined;
+    const view = chosen ? { ...live, timing: chosen.timing } : live;
+    const c = chosen ? chosen.result : liveClass;
     const d = data.disputes.find((x) => x.opportunityId === o.id && x.quarterId === quarter.id && !(x.withdrawnAt && x.withdrawnAt <= asOf));
     return {
       ...c,
@@ -60,6 +77,8 @@ export function computeForecast(data: ForecastInput, asOf: IsoDate, quarter: Qua
       tcv: o.tcv,
       managerId: o.managerId,
       dispute: d ? { dispute: d, status: disputeStatus(d, c.group, view.states, asOf) } : null,
+      interventions,
+      previewing: chosen ? chosen.condition : null,
     };
   });
   const managerIds = [...new Set(lines.map((l) => l.managerId))].sort();
@@ -74,5 +93,6 @@ export function computeForecast(data: ForecastInput, asOf: IsoDate, quarter: Qua
     readyNotCommitted: lines
       .filter((l) => l.group === "uncommitted" && (l.view.timing.readiness === "slow" || l.view.timing.readiness === "standard"))
       .sort(byTcv),
+    recoverable: lines.filter((l) => l.interventions.length > 0 && !["signed", "firm", "core"].includes(l.group)).sort(byTcv),
   };
 }
