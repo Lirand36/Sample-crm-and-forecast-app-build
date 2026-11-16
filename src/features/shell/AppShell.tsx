@@ -10,6 +10,7 @@ import { PRODUCT_NAME, userLabel } from "./labels";
 interface NavItem {
   href: string;
   label: string;
+  sub?: boolean;
 }
 
 const CRM_NAV: NavItem[] = [
@@ -19,19 +20,37 @@ const CRM_NAV: NavItem[] = [
 ];
 const APPS_NAV: NavItem[] = [
   { href: "/forecast", label: "Forecast" },
-  { href: "/evidence", label: "Evidence review" },
+  { href: "/forecast/backtest", label: "Previous quarters", sub: true },
 ];
 const ADMIN_NAV: NavItem[] = [{ href: "/admin", label: "Administration" }];
 
-function NavSection({ title, items, pathname }: { title: string; items: NavItem[]; pathname: string | null }) {
+function NavSection({
+  title,
+  items,
+  pathname,
+}: {
+  title: string;
+  items: NavItem[];
+  pathname: string | null;
+}) {
   return (
     <div className="nav-section">
       <div className="nav-title">{title}</div>
-      {items.map((item) => (
-        <Link key={item.href} href={item.href} className={pathname?.startsWith(item.href) ? "nav-item active" : "nav-item"}>
-          {item.label}
-        </Link>
-      ))}
+      {items.map((item) => {
+        const active =
+          item.sub || !items.some((x) => x.sub && pathname?.startsWith(x.href))
+            ? pathname?.startsWith(item.href)
+            : false;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`nav-item${item.sub ? " nav-sub" : ""}${active ? " active" : ""}`}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -46,12 +65,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           {PRODUCT_NAME}
         </Link>
         <div className="topbar-right">
-          <span className="today" title="The app runs on a fixed calendar so every walkthrough shows the same numbers. Q1 2027 ends on March 31.">
+          <span
+            className="today"
+            title="The app runs on a fixed calendar so every walkthrough shows the same numbers. Q1 2027 ends on March 31."
+          >
             Today: {formatDisplayDate(session.asOfDate)}
           </span>
           <label className="role">
             <span className="muted small">Signed in as</span>
-            <select value={actingUser.id} onChange={(e) => void setActingUser(e.target.value)} aria-label="Signed in as">
+            <select
+              value={actingUser.id}
+              onChange={(e) => void setActingUser(e.target.value)}
+              aria-label="Signed in as"
+            >
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
                   {userLabel(u)}

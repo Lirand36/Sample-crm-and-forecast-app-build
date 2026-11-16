@@ -107,6 +107,11 @@ body {
   text-decoration: none;
 }
 
+.nav-sub {
+  padding-left: 22px;
+  font-size: 14px;
+}
+
 .nav-item.active {
   background: var(--accent-soft);
   color: var(--accent);
@@ -1194,4 +1199,180 @@ tr.archived td {
   .topbar .role select {
     flex: 1;
   }
+}
+
+/* ---------- Forecast home: headline, moves, to-dos ---------- */
+.headline {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 12px 0 8px;
+}
+
+.headline-figure {
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+}
+
+.headline-of {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.headline .runway-caption {
+  margin: 10px 0 14px;
+  font-size: 17px;
+}
+
+.progress {
+  position: relative;
+  height: 14px;
+  background: #e9eef0;
+  border-radius: 4px;
+}
+
+.progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.progress-target {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  border-left: 2px solid var(--text);
+}
+
+.headline-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.headline-note span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.headline-note .manager {
+  color: var(--manager);
+}
+
+.moves .move {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.move-amount {
+  font-weight: 700;
+  text-align: right;
+}
+
+.move-reason {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.move-reason q {
+  font-style: italic;
+}
+
+.todo {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.todo li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.todo-tag {
+  flex: 0 0 64px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 4px;
+  padding: 1px 0;
+}
+
+.tag-pull { background: var(--accent-soft); color: var(--accent); }
+.tag-chase { background: #f3e8f0; color: var(--manager); }
+.tag-watch { background: #fbeee0; color: #8a5a12; }
+.tag-review { background: #e9eef0; color: var(--text); }
+
+
+/* Collapsible cards on the Forecast home */
+details.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 20px;
+  margin: 12px 0;
+}
+
+details.card > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+details.card > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.card > summary::before {
+  content: "▸";
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+details.card[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+details.card[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+details.card[open] {
+  padding-bottom: 16px;
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: 17px;
+  flex: 1;
+}
+
+.card-figure {
+  font-weight: 700;
+}
+
+.card-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details.card > summary::before { transition: none; }
 }

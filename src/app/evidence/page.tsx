@@ -58,6 +58,9 @@ export default function EvidenceReviewPage() {
 
   return (
     <section>
+      <p className="crumbs">
+        <Link href="/forecast">Forecast</Link> /
+      </p>
       <h1>Evidence review</h1>
       <p className="muted section-intro">
         What the system read from customer emails and documents. Good news changes nothing until someone approves it. Bad news applies at

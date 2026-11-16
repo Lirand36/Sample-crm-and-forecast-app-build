@@ -35,15 +35,16 @@ check("Conservative $13.5M, Stretch $29.5M", (await page.getByTestId("conservati
 check("Manager commitment $51.0M in its own box", (await page.getByTestId("manager-commitment").innerText()) === "$51.0M");
 check("bridge: Feb 22 run to now, Slipped −$20.0M", (await page.getByTestId("bridge-slipped").innerText()).includes("−$20.0M"));
 check("bridge sentence", (await page.getByTestId("bridge-sentence").innerText()).startsWith("Down $39.3M"));
-check("target gap shown", (await page.locator(".runway-caption").innerText()).includes("$20.0M short of the $46.0M target"));
-await page.locator(".stake-box a", { hasText: "Energy Group" }).click();
+check("target gap shown", (await page.locator(".runway-caption").innerText()).includes("$20.0M short") && (await page.locator(".headline-figure").innerText()).includes("of $46.0M target"));
+check("National Bank move shows the email quote", (await page.getByTestId("bridge-slipped").innerText()).includes("March 16"), await page.getByTestId("bridge-slipped").innerText());
+await page.locator(".todo a", { hasText: "Energy Group" }).click();
 await page.locator(".verdict").waitFor();
 const verdict = await page.locator(".verdict").innerText();
 check("Forecast deal screen: Energy Group is Core, planned Mar 23", verdict.includes("Core") && verdict.includes("Mar 23, 2027"), verdict.replace(/\s+/g, " "));
 check("path calendar shows the open step", (await page.locator(".cal-row").count()) === 1);
 await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
-check("Could be pulled in lists $21.0M", (await page.locator(".stake-box", { hasText: "Could be pulled in" }).innerText()).includes("$21.0M"));
-await page.locator(".stake-box", { hasText: "Could be pulled in" }).getByRole("link", { name: "National Bank" }).click();
+check("What to do: pull in National Bank by Mar 10", (await page.locator(".todo li", { hasText: "Pull in" }).first().innerText()).includes("Mar 10, 2027"));
+await page.locator(".todo li", { hasText: "Pull in" }).getByRole("link", { name: "National Bank" }).click();
 await page.locator(".intervention").waitFor();
 check("National Bank Intervention: start procurement and legal by Mar 10", (await page.locator(".intervention").innerText()).includes("by Mar 10, 2027"));
 await page.getByRole("button", { name: "Preview" }).click();
@@ -62,6 +63,7 @@ await page.getByTestId("reset").click();
 await page.getByText("Baseline restored.").waitFor();
 await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
 await page.getByTestId("core").waitFor();
+await page.locator("details.more > summary").click();
 const runRow = page.locator("table").last().locator("tbody tr").first();
 check("Feb 22 stored run shows Core $65.3M", (await runRow.innerText()).includes("$65.3M"), await runRow.innerText());
 
@@ -159,7 +161,7 @@ check("Big Deal National Bank is $20M", (await page.locator(".details.revenue").
 
 // Evidence review: the VP Sales overturns National Bank's confirmed block (test 9)
 await role.selectOption("u-vp-sales");
-await page.getByRole("link", { name: "Evidence review" }).click();
+await page.goto(`${base}/evidence`);
 await page.getByRole("heading", { level: 1, name: "Evidence review" }).waitFor();
 const blockRow = page.locator("tr", { hasText: "National Bank" }).filter({ hasText: "risk committee" });
 await blockRow.getByRole("button", { name: "Overturn…" }).click();
@@ -177,6 +179,7 @@ await role.selectOption("u-mgr-a");
 await page.getByRole("link", { name: "Forecast", exact: true }).first().click();
 await page.getByTestId("submit").click();
 await page.getByText(/Submitted Mar 1, 2027/).waitFor();
+await page.locator("details.more > summary").click();
 await page.locator("table").last().locator("td", { hasText: "Submission" }).waitFor({ timeout: 5000 }).catch(() => {});
 check("Sales Manager submission freezes a run", (await page.locator("table").last().innerText()).includes("Submission"));
 await page.goto(`${base}/forecast/deals/opp-natbank`);
@@ -203,7 +206,7 @@ await page.waitForFunction(() => document.querySelector('select[aria-label="Sign
 check("Restore baseline data resets everything (signed in as CRO again)", (await role.inputValue()) === "u-cro");
 // Backtest (DR-15, test 60): no closed quarter yet; the example quarter shows no label (R-8)
 await page.goto(`${base}/forecast`);
-await page.getByRole("link", { name: "Backtest" }).click();
+await page.goto(`${base}/forecast/backtest`);
 await page.getByTestId("not-backtested").waitFor();
 check("no closed quarter: Not yet backtested", (await page.getByTestId("not-backtested").innerText()).includes("Not yet backtested"));
 await page.getByTestId("show-synthetic").click();

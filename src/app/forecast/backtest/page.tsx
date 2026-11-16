@@ -22,11 +22,11 @@ export default function BacktestPage() {
     <section>
       <div className="page-head">
         <div>
-          <h1>Backtest</h1>
+          <h1>Previous quarters</h1>
           <p className="muted subtitle">Past forecasts against what actually signed.</p>
         </div>
         <div className="actions">
-          <Link href="/forecast" className="btn">Back to Forecast</Link>
+          <Link href="/forecast" className="btn">Forecast</Link>
         </div>
       </div>
 
