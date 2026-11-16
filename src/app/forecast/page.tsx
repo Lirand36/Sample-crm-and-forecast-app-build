@@ -134,7 +134,17 @@ export default function ForecastHome() {
       </div>
 
       <Headline
-        disputes={f.lines
+        core={c.core}
+        conservative={c.conservative}
+        stretch={c.stretch}
+        target={c.target}
+      />
+
+      <ManagersCommit
+        core={c.core}
+        target={c.target}
+        total={c.managerCommitment}
+        moves={f.lines
           .filter((l) => l.dispute?.status.live)
           .map((l) => ({
             id: l.view.opportunity.id,
@@ -143,12 +153,8 @@ export default function ForecastHome() {
             reason: l.dispute!.dispute.reason,
             amount: ((l.dispute!.dispute.direction === "in" ? 1 : -1) *
               (l.tcv ?? 0)) as Cents,
-          }))}
-        core={c.core}
-        conservative={c.conservative}
-        stretch={c.stretch}
-        target={c.target}
-        managerCommitment={c.managerCommitment}
+          }))
+          .sort((x, y) => y.amount - x.amount)}
       />
 
       {data.bridge ? (
@@ -530,21 +536,11 @@ function Headline({
   conservative,
   stretch,
   target,
-  managerCommitment,
-  disputes,
 }: {
-  disputes: {
-    id: string;
-    name: string;
-    manager: string;
-    reason: string;
-    amount: Cents;
-  }[];
   core: Cents;
   conservative: Cents;
   stretch: Cents;
   target: Cents | null;
-  managerCommitment: Cents;
 }) {
   const scale = Math.max(target ?? 0, stretch, core, 1);
   const pct = (v: number) => `${Math.min(100, (v / scale) * 100)}%`;
@@ -588,45 +584,6 @@ function Headline({
         <span data-testid="conservative">{formatAmount(conservative)}</span>{" "}
         and <span data-testid="stretch">{formatAmount(stretch)}</span>.
       </p>
-      <p className="headline-note">
-        Managers&apos; Commit:{" "}
-        <span className="manager" data-testid="manager-commitment">
-          {formatAmount(managerCommitment)}
-        </span>
-        {disputes.length ? (
-          <>
-            {" "}
-            = {formatAmount(core)} system forecast
-            {disputes.map((d) => (
-              <span key={d.name} className="dispute-term">
-                {d.amount < 0 ? " − " : " + "}
-                {d.name} {formatAmount(Math.abs(d.amount) as Cents)}
-              </span>
-            ))}
-            , where a manager moved a deal into or out of Commit.
-          </>
-        ) : (
-          ". Every manager follows the system."
-        )}
-      </p>
-      {disputes.length ? (
-        <ul className="dispute-list">
-          {disputes.map((d) => (
-            <li key={d.id}>
-              <Link href={`/forecast/deals/${d.id}`}>{d.name}</Link>{" "}
-              <span className="manager">
-                {d.amount < 0 ? "−" : "+"}
-                {formatAmount(Math.abs(d.amount) as Cents)}
-              </span>
-              <span className="muted">, {d.manager}:</span> <q>{d.reason}</q>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <p className="muted small">
-        A Sales Manager moves a deal into or out of Commit on the deal&apos;s
-        page and says why. The system re-checks every move each day.
-      </p>
     </div>
   );
 }
@@ -640,5 +597,113 @@ function More({ n, what }: { n: number; what: string }) {
     <li className="todo-more muted small">
       And {n - TOP} more {what}. See Deals below.
     </li>
+  );
+}
+
+/**
+ * Managers' Commit as a waterfall: the system forecast, then each deal a Sales Manager moved into (+) or out of
+ * (−) Commit, with the manager and the reason, landing on Managers' Commit.
+ */
+function ManagersCommit({
+  core,
+  target,
+  total,
+  moves,
+}: {
+  core: Cents;
+  target: Cents | null;
+  total: Cents;
+  moves: { id: string; name: string; manager: string; reason: string; amount: Cents }[];
+}) {
+  let run = core as number;
+  const steps = moves.map((m) => {
+    const from = run;
+    run += m.amount;
+    return { ...m, from, to: run };
+  });
+  const scale = Math.max(core, total, target ?? 0, ...steps.map((x) => Math.max(x.from, x.to)), 1);
+  const pct = (v: number) => `${(Math.max(0, v) / scale) * 100}%`;
+  const bar = (from: number, to: number, cls: string) => (
+    <span
+      className={`wf-bar ${cls}`}
+      style={{ left: pct(Math.min(from, to)), width: pct(Math.abs(to - from)) }}
+    />
+  );
+  const targetLine =
+    target !== null ? <span className="wf-target" style={{ left: pct(target) }} /> : null;
+  const diff = (total - core) as Cents;
+  return (
+    <section className="wf" aria-label="Managers' Commit">
+      <div className="wf-head">
+        <div>
+          <div className="wf-title">Managers&apos; Commit</div>
+          <div className="muted small">
+            {moves.length
+              ? "The system forecast, plus each deal a Sales Manager moved into or out of Commit."
+              : "Every Sales Manager agrees with the system."}
+          </div>
+        </div>
+        <div className="wf-total">
+          <span className="manager" data-testid="manager-commitment">
+            {formatAmount(total)}
+          </span>
+          {diff !== 0 ? (
+            <span className="muted small">
+              {diff > 0 ? "+" : ""}
+              {formatAmount(diff)} vs the system
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <div className="wf-rows">
+        <div className="wf-row">
+          <div className="wf-label">
+            <strong>System forecast</strong>
+          </div>
+          <div className="wf-track">
+            {targetLine}
+            {bar(0, core, "wf-system")}
+          </div>
+          <div className="wf-amount">{formatAmount(core)}</div>
+        </div>
+        {steps.map((x) => (
+          <div className="wf-row" key={x.id}>
+            <div className="wf-label">
+              <Link href={`/forecast/deals/${x.id}`}>{x.name}</Link>
+              <span className="muted small">
+                {x.manager}, {x.amount > 0 ? "moved into Commit" : "moved out of Commit"}
+              </span>
+            </div>
+            <div className="wf-track">
+              {targetLine}
+              {bar(x.from, x.to, x.amount > 0 ? "wf-up" : "wf-down")}
+            </div>
+            <div className={`wf-amount ${x.amount > 0 ? "up" : "down"}`}>
+              {x.amount > 0 ? "+" : ""}
+              {formatAmount(x.amount)}
+            </div>
+            <q className="wf-reason">{x.reason}</q>
+          </div>
+        ))}
+        {moves.length ? (
+          <div className="wf-row wf-final">
+            <div className="wf-label">
+              <strong className="manager">Managers&apos; Commit</strong>
+            </div>
+            <div className="wf-track">
+              {targetLine}
+              {bar(0, total, "wf-manager")}
+            </div>
+            <div className="wf-amount manager">
+              <strong>{formatAmount(total)}</strong>
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <p className="muted small wf-foot">
+        {target !== null ? <>Dashed line: the {formatAmount(target)} target. </> : null}A Sales Manager
+        moves a deal on its page and gives a reason; the system re-checks every move each day.
+      </p>
+    </section>
   );
 }
