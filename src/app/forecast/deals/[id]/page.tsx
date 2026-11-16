@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { changeLink, waiveCondition } from "@/application/deal-config";
 import { raiseDispute, withdrawDispute } from "@/application/disputes";
 import { loadForecastWithData } from "@/application/forecast";
 import { importEmail } from "@/application/import-event";
@@ -12,7 +13,8 @@ import { useStore } from "@/features/shell/StoreProvider";
 import type { ForecastLine } from "@/domain/forecast";
 import { evidenceStatus, gradeOf, type ConditionState, type EvidenceStatus } from "@/domain/condition-state";
 import { compareDates, daysBetween, formatDisplayDate, maxDate, type IsoDate } from "@/domain/dates";
-import { CONDITION_LABEL, type ConditionType } from "@/domain/entities";
+import { NEVER_WAIVED } from "@/domain/config-rules";
+import { CONDITION_LABEL, type ConditionType, type LinkStrength } from "@/domain/entities";
 import { formatMillions, formatUsd } from "@/domain/money";
 import type { StepTiming } from "@/domain/timing";
 import { useStoreQuery } from "@/features/crm/ui";
@@ -195,6 +197,8 @@ export default function ForecastDealPage() {
       {evaluated ? <ManagerPosition line={line} qe={qe} /> : null}
 
       <AddEmail opportunityId={o.id} accountName={view.account?.name ?? ""} />
+
+      {evaluated ? <RevOpsChanges line={line} /> : null}
 
       <h2>Steps and evidence</h2>
       <table className="table compact">
@@ -447,6 +451,112 @@ function AddEmail({ opportunityId, accountName }: { opportunityId: string; accou
         ) : null}
         {message ? <p className="small" data-testid="import-result">{message}</p> : null}
       </div>
+    </>
+  );
+}
+
+function RevOpsChanges({ line }: { line: ForecastLine }) {
+  const { store, actingUser, refresh } = useStore();
+  const o = line.view.opportunity;
+  const isRevOps = actingUser.role === "revops";
+  const waivable = line.view.states.filter((s) => s.state !== "done" && s.state !== "waived" && !NEVER_WAIVED.includes(s.type));
+  const types = line.view.states.map((s) => s.type);
+  const [mode, setMode] = useState<"waive" | "link">("waive");
+  const [cond, setCond] = useState<ConditionType | "">(waivable[0]?.type ?? "");
+  const [from, setFrom] = useState<ConditionType>(types[0] ?? "executive_sponsor");
+  const [to, setTo] = useState<ConditionType>(types[types.length - 1] ?? "procurement_legal");
+  const [strength, setStrength] = useState<LinkStrength | "removed">("soft");
+  const [reason, setReason] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const waived = line.view.states.filter((s) => s.state === "waived");
+  const current = line.view.links.find((l) => l.from === from && l.to === to);
+
+  if (!isRevOps && !waived.length) return null;
+  return (
+    <>
+      <h2>Waivers and links</h2>
+      {waived.length ? (
+        <ul className="small">
+          {waived.map((s) => (
+            <li key={s.type}>
+              <strong>{CONDITION_LABEL[s.type]}</strong> waived by RevOps: &ldquo;{s.waiverReason}&rdquo;. A deal with a waiver is never Firm.
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {isRevOps ? (
+        <form
+          className="form"
+          data-testid="revops-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const r =
+              mode === "waive"
+                ? cond
+                  ? await waiveCondition(store, o.id, cond, reason)
+                  : { ok: false as const, errors: { form: "No step can be waived on this deal." } }
+                : await changeLink(store, o.id, from, to, strength, reason);
+            if (!r.ok) return setMessage(Object.values(r.errors)[0] ?? "Refused.");
+            setMessage(mode === "waive" ? "Step waived. It is in the change log." : "Link changed for this deal only. It is in the change log.");
+            setReason("");
+            await refresh();
+          }}
+        >
+          <p className="muted small" style={{ marginTop: 0 }}>
+            RevOps only. Budget and Vendor selection can never be waived. A link change applies to this deal only and cannot make a step wait on itself.
+          </p>
+          <div className="form-grid">
+            <label className="field">
+              <span className="field-label">Change</span>
+              <select value={mode} onChange={(e) => setMode(e.target.value as "waive" | "link")} aria-label="Change">
+                <option value="waive">Waive a step</option>
+                <option value="link">Change a link</option>
+              </select>
+            </label>
+            {mode === "waive" ? (
+              <label className="field">
+                <span className="field-label">Step</span>
+                <select value={cond} onChange={(e) => setCond(e.target.value as ConditionType)} aria-label="Step to waive">
+                  {waivable.map((s) => (
+                    <option key={s.type} value={s.type}>{CONDITION_LABEL[s.type]}</option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <>
+                <label className="field">
+                  <span className="field-label">Earlier step</span>
+                  <select value={from} onChange={(e) => setFrom(e.target.value as ConditionType)} aria-label="Earlier step">
+                    {types.map((t) => <option key={t} value={t}>{CONDITION_LABEL[t]}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  <span className="field-label">Step that waits</span>
+                  <select value={to} onChange={(e) => setTo(e.target.value as ConditionType)} aria-label="Step that waits">
+                    {types.map((t) => <option key={t} value={t}>{CONDITION_LABEL[t]}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  <span className="field-label">Link (now: {current ? current.strength : "none"})</span>
+                  <select value={strength} onChange={(e) => setStrength(e.target.value as LinkStrength | "removed")} aria-label="Link">
+                    <option value="hard">Hard: must finish first</option>
+                    <option value="soft">Soft: can overlap</option>
+                    <option value="removed">Remove</option>
+                  </select>
+                </label>
+              </>
+            )}
+            <label className="field">
+              <span className="field-label">Reason</span>
+              <input value={reason} onChange={(e) => setReason(e.target.value)} aria-label="Change reason" />
+            </label>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">{mode === "waive" ? "Waive step" : "Change link"}</button>
+          </div>
+          {message ? <p className="small" data-testid="revops-result">{message}</p> : null}
+        </form>
+      ) : null}
     </>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { DataStore } from "@/application/ports";
 import { formatDisplayDate, isIsoDate, type IsoDate } from "@/domain/dates";
-import type { ChangeLogEntry, User } from "@/domain/entities";
+import { CONDITION_LABEL, type ChangeLogEntry, type ConditionType, type User } from "@/domain/entities";
 import { cents, formatUsd, type Cents } from "@/domain/money";
 import { useStore } from "@/features/shell/StoreProvider";
 
@@ -80,7 +80,7 @@ export function ChangeHistory({ entries, users }: { entries: ChangeLogEntry[]; u
         {entries.map((c) => (
           <tr key={c.id}>
             <td>{formatDisplayDate(c.at)}</td>
-            <td>{c.field.replace(/_/g, " ")}</td>
+            <td>{fieldLabel(c.field)}</td>
             <td>{displayLogValue(c.field, c.oldValue, users)}</td>
             <td>{displayLogValue(c.field, c.newValue, users)}</td>
             <td>{name(c.actorId)}</td>
@@ -90,6 +90,16 @@ export function ChangeHistory({ entries, users }: { entries: ChangeLogEntry[]; u
       </tbody>
     </table>
   );
+}
+
+function fieldLabel(field: string): string {
+  const step = (t: string) => CONDITION_LABEL[t as ConditionType] ?? t.replace(/_/g, " ");
+  if (field.startsWith("waiver:")) return `waiver: ${step(field.slice(7))}`;
+  if (field.startsWith("link:")) {
+    const [from = "", to = ""] = field.slice(5).split(">");
+    return `link: ${step(from)} → ${step(to)}`;
+  }
+  return field.replace(/_/g, " ");
 }
 
 function displayLogValue(field: string, value: string | null, users: User[]): string {

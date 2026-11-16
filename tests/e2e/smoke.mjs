@@ -201,6 +201,24 @@ await page.getByTestId("reset-start").click();
 await page.getByTestId("reset").click();
 await page.waitForFunction(() => document.querySelector('select[aria-label="Signed in as"]')?.value === "u-cro");
 check("Restore baseline data resets everything (signed in as CRO again)", (await role.inputValue()) === "u-cro");
+// RevOps waiver (test 53): a Sales Manager sees no form; RevOps waives Legal on Retail, which drops to Core
+await role.selectOption("u-mgr-a");
+await page.goto(`${base}/forecast/deals/opp-retail`);
+await page.getByRole("heading", { name: "Manager's position" }).waitFor();
+check("a Sales Manager has no waiver form", (await page.getByTestId("revops-form").count()) === 0);
+await role.selectOption("u-revops");
+await page.getByTestId("revops-form").waitFor();
+check("Budget is never offered for a waiver", !(await page.getByRole("combobox", { name: "Step to waive" }).innerText()).includes("Budget"));
+await page.getByRole("combobox", { name: "Step to waive" }).selectOption("procurement_legal");
+await page.getByLabel("Change reason").fill("Customer's standard paper");
+await page.getByRole("button", { name: "Waive step" }).click();
+await page.getByTestId("revops-result").waitFor();
+await page.getByText("waiver in place").first().waitFor({ timeout: 5000 }).catch(() => {});
+check("waiver on Retail: Core with 'waiver in place'", (await page.locator("main").innerText()).includes("waiver in place"));
+await page.goto(`${base}/crm/opportunities/opp-retail`);
+await page.getByText("waiver: Procurement").first().waitFor({ timeout: 5000 }).catch(() => {});
+check("the waiver is in the deal's change log", (await page.locator("main").innerText()).includes("Customer's standard paper"));
+
 await page.goto(`${base}/crm/opportunities`);
 await page.locator("tbody tr").first().waitFor();
 check("restore removes the created opportunity and restores TCV", (await page.locator("tbody tr").count()) === 10 && (await page.locator("tbody tr", { hasText: "Retail Enterprise" }).innerText()).includes("$1.5M"));
