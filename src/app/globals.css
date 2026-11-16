@@ -1268,8 +1268,9 @@ tr.archived td {
 
 .moves .move {
   display: grid;
-  grid-template-columns: 84px 1fr;
-  gap: 12px;
+  grid-template-columns: 72px 1fr;
+  gap: 14px;
+  align-items: baseline;
   padding: 10px 0;
   border-top: 1px solid var(--line);
 }
@@ -1277,6 +1278,7 @@ tr.archived td {
 .move-amount {
   font-weight: 700;
   text-align: right;
+  white-space: nowrap;
 }
 
 .move-reason {

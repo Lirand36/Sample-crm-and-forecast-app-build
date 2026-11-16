@@ -11,7 +11,7 @@ describe("money in integer cents", () => {
     expect(() => cents(1.5)).toThrow();
   });
   it("formats", () => {
-    expect(formatAmount(usdM(8))).toBe("$8,000,000");
+    expect(formatAmount(usdM(8))).toBe("$8M");
     expect(formatAmount(usdM(-0.5))).toBe("−$500,000");
     expect(formatUsd(cents(123456789))).toBe("$1,234,567.89");
   });
