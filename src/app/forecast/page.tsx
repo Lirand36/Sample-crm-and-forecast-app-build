@@ -6,7 +6,7 @@ import { loadBridge, loadForecast } from "@/application/forecast";
 import { submitForecast } from "@/application/runs";
 import { useStore } from "@/features/shell/StoreProvider";
 import { BRIDGE_LABEL } from "@/domain/bridge";
-import { formatDisplayDate } from "@/domain/dates";
+import { daysBetween, formatDisplayDate } from "@/domain/dates";
 import { CONDITION_LABEL, type Group } from "@/domain/entities";
 import type { ForecastLine } from "@/domain/forecast";
 import { formatMillions, type Cents } from "@/domain/money";
@@ -44,7 +44,7 @@ export default function ForecastHome() {
         <div>
           <h1>Forecast</h1>
           <p className="muted subtitle">
-            {f.quarter.label}, as of {formatDisplayDate(f.asOf)}. The quarter ends {formatDisplayDate(f.quarter.end)}.
+            {f.quarter.label} ends {formatDisplayDate(f.quarter.end)}, in {daysBetween(f.asOf, f.quarter.end)} days.
           </p>
         </div>
         <div className="actions">
@@ -97,7 +97,7 @@ export default function ForecastHome() {
           <table className="table compact">
             <tbody>
               <tr>
-                <td>System forecast on {formatDisplayDate(data.bridge.baseline.asOfDate)}</td>
+                <td>{formatDisplayDate(data.bridge.baseline.asOfDate)}</td>
                 <td className="num">{formatMillions(data.bridge.before)}</td>
                 <td></td>
               </tr>
@@ -113,7 +113,7 @@ export default function ForecastHome() {
                       return (
                         <div key={m.opportunityId}>
                           <Link href={`/forecast/deals/${m.opportunityId}`}>{line?.view.account?.name ?? m.opportunityId}</Link>
-                          <span className="muted"> · {m.causes.join("; ")}</span>
+                          <span className="muted">: {m.causes.join(", ")}</span>
                         </div>
                       );
                     })}
@@ -121,7 +121,7 @@ export default function ForecastHome() {
                 </tr>
               ))}
               <tr>
-                <td><strong>System forecast now</strong></td>
+                <td><strong>Today</strong></td>
                 <td className="num"><strong>{formatMillions(data.bridge.after)}</strong></td>
                 <td></td>
               </tr>
@@ -132,23 +132,23 @@ export default function ForecastHome() {
 
       <div className="stake">
         <StakeList
-          title="Downside exposure"
-          hint="Counted in the system forecast but not Firm."
+          title="Could slip"
+          hint="Counted, but not Firm."
           lines={f.downside}
           detail={(l) => l.reasons[0] ?? ""}
         />
         <StakeList
-          title="Recoverable"
-          hint="Outside the forecast, but one step started in parallel would bring it in. Shown, never counted."
+          title="Could be pulled in"
+          hint="Not counted. Starting one step early brings it in."
           lines={f.recoverable}
           detail={(l) => {
             const i = l.interventions[0]!;
-            return `start ${CONDITION_LABEL[i.condition].toLowerCase()} by ${formatDisplayDate(i.startBy)}`;
+            return `Start ${CONDITION_LABEL[i.condition].toLowerCase()} by ${formatDisplayDate(i.startBy)}`;
           }}
         />
         <StakeList
-          title="Ready, not committed"
-          hint="Fits the quarter on timing, but the customer has not committed. Shown, never counted."
+          title="Waiting on the customer"
+          hint="Not counted. Timing fits, but the customer hasn't committed."
           lines={f.readyNotCommitted}
           detail={(l) => l.reasons[0] ?? ""}
         />
@@ -206,9 +206,9 @@ export default function ForecastHome() {
             <th>Group</th>
             <th>Commitment</th>
             <th>Timing</th>
-            <th>Planned signature</th>
+            <th>Expected signature</th>
             <th className="num">TCV</th>
-            <th>Why</th>
+            <th>Held back by</th>
           </tr>
         </thead>
         <tbody>
@@ -240,19 +240,19 @@ export default function ForecastHome() {
                   )}
                 </td>
                 <td className="num">{l.tcv === null ? "—" : formatMillions(l.tcv)}</td>
-                <td className="small">{l.reasons.join("; ") || "—"}</td>
+                <td className="small">{l.reasons.join("; ") || ""}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
 
-      <h2>Stored runs</h2>
+      <h2>Past runs</h2>
       <table className="table compact">
         <thead>
           <tr>
             <th>As of</th>
-            <th>Trigger</th>
+            <th>Type</th>
             <th className="num">Conservative</th>
             <th className="num">System forecast</th>
             <th className="num">Stretch</th>
@@ -285,7 +285,7 @@ function StakeList({ title, hint, lines, detail }: { title: string; hint: string
       </div>
       <div className="muted small">{hint}</div>
       {lines.length === 0 ? (
-        <p className="muted small">None.</p>
+        <p className="muted small">None</p>
       ) : (
         <ul>
           {lines.slice(0, 3).map((l) => (
@@ -314,19 +314,18 @@ function Runway({ conservative, core, stretch, target, managerCommitment, liveDi
         <div>
           <div className="runway-figure" data-testid="core">{formatMillions(core)}</div>
           <p className="runway-caption">
-            System forecast for the quarter
-            {gap === null ? "." : gap >= 0 ? (
-              <>, <strong className="ok">{formatMillions(gap as Cents)} above</strong> the {formatMillions(target!)} target.</>
+            System forecast.
+            {gap === null ? null : gap >= 0 ? (
+              <> <strong className="ok">{formatMillions(gap as Cents)} above</strong> the {formatMillions(target!)} target.</>
             ) : (
-              <>, <strong className="short">{formatMillions(Math.abs(gap) as Cents)} short</strong> of the {formatMillions(target!)} target.</>
+              <> <strong className="short">{formatMillions(Math.abs(gap) as Cents)} short</strong> of the {formatMillions(target!)} target.</>
             )}
           </p>
         </div>
         <div className="runway-manager">
           <div className="runway-manager-figure" data-testid="manager-commitment">{formatMillions(managerCommitment)}</div>
           <p className="small">
-            Manager commitment: the system forecast adjusted by {liveDisputes} Dispute{liveDisputes === 1 ? "" : "s"} from the Sales Managers.
-            Never mixed into the system number.
+            Manager commitment, with {liveDisputes} Dispute{liveDisputes === 1 ? "" : "s"}. Kept apart from the system forecast.
           </p>
         </div>
       </div>

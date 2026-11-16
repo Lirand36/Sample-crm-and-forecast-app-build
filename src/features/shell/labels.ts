@@ -42,8 +42,8 @@ export const GROUP_LABEL: Record<import("@/domain/entities").Group, string> = {
 export const COMMITMENT_LABEL = { committed: "Committed", engaged: "Engaged", unproven: "Unproven", at_risk: "At risk" } as const;
 
 export const READINESS_LABEL = {
-  slow: "Fits even at slow pace",
+  slow: "Fits even if slow",
   standard: "Fits at standard pace",
-  fast: "Fits only at fast pace",
-  not_ready: "Does not fit this quarter",
+  fast: "Fits only if fast",
+  not_ready: "Misses the quarter",
 } as const;

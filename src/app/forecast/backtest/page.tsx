@@ -23,7 +23,7 @@ export default function BacktestPage() {
       <div className="page-head">
         <div>
           <h1>Backtest</h1>
-          <p className="muted subtitle">How past forecasts compared with what actually signed, for each closed quarter.</p>
+          <p className="muted subtitle">Past forecasts against what actually signed.</p>
         </div>
         <div className="actions">
           <Link href="/forecast" className="btn">Back to Forecast</Link>
@@ -34,8 +34,7 @@ export default function BacktestPage() {
         <div className="panel" data-testid="not-backtested">
           <h2>Not yet backtested</h2>
           <p className="muted">
-            A quarter is backtested once it has closed and its cutoff (quarter end plus 7 days) has passed. The first one here will be
-            this quarter, after its cutoff.
+            Each quarter appears here 7 days after it ends.
           </p>
           {!synthetic ? (
             <button type="button" className="btn" onClick={() => setSynthetic(true)} data-testid="show-synthetic">
@@ -75,17 +74,17 @@ function BacktestView({ title, result: r, deals, label }: { title: string; resul
       <h3>{title} {tag}</h3>
       <div className="backtest-grid" data-testid="backtest-metrics">
         <Metric name="Actual signed" value={formatMillions(r.actual)} tag={tag} />
-        <Metric name="Conservative / Core / Stretch at the run" value={`${formatMillions(r.conservative)} / ${formatMillions(r.core)} / ${formatMillions(r.stretch)}`} tag={tag} />
-        <Metric name="Actual between Conservative and Stretch" value={r.bracketed ? "Yes" : "No"} tag={tag} />
+        <Metric name="Conservative / Core / Stretch then" value={`${formatMillions(r.conservative)} / ${formatMillions(r.core)} / ${formatMillions(r.stretch)}`} tag={tag} />
+        <Metric name="Landed between Conservative and Stretch" value={r.bracketed ? "Yes" : "No"} tag={tag} />
         <Metric name="Core precision" hint="Share of Core that signed" value={pct(r.corePrecision)} tag={tag} />
         <Metric name="Core capture" hint="Share of what signed that was in Core" value={pct(r.coreCapture)} tag={tag} />
         <Metric name="Forecast error" hint="Core − Actual · Manager commitment − Actual" value={`${signed(r.coreError)} · ${signed(r.managerError)}`} tag={tag} />
-        <Metric name="Timing bias" hint="Signed date − standard-pace date, signed deals" value={days(r.timingBiasDays)} tag={tag} />
+        <Metric name="Timing bias" hint="Signed minus expected date, signed deals" value={days(r.timingBiasDays)} tag={tag} />
       </div>
-      <h3>Signing rate by group {tag}</h3>
+      <h3>Signed, by group {tag}</h3>
       <table className="table compact" data-testid="signing-rate">
         <thead>
-          <tr><th>Group at the run</th><th>TCV</th><th>Signed in the quarter</th><th>Rate</th></tr>
+          <tr><th>Group then</th><th>TCV</th><th>Signed</th><th>Rate</th></tr>
         </thead>
         <tbody>
           {r.signingRate.map((s) => (
@@ -101,7 +100,7 @@ function BacktestView({ title, result: r, deals, label }: { title: string; resul
       <h3>Deals {tag}</h3>
       <table className="table compact">
         <thead>
-          <tr><th>Deal</th><th>TCV</th><th>Group at the run</th><th>Standard-pace date</th><th>Signed</th></tr>
+          <tr><th>Deal</th><th>TCV</th><th>Group then</th><th>Expected</th><th>Signed</th></tr>
         </thead>
         <tbody>
           {deals.map((d) => (

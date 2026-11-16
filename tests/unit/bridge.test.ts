@@ -25,13 +25,13 @@ describe("movement bridge from the Feb 22 run (PRD §4J, test 1 converted per R-
   });
 
   it("each move names its causes", () => {
-    expect(line("slipped")!.moves[0]).toMatchObject({ opportunityId: "opp-natbank", causes: ["Evidence applied, approved or rejected"] });
-    expect(line("lost")!.moves[0]!.causes).toContain("CRM change");
-    expect(line("tcv_change")!.moves[0]!.causes).toContain("CRM change");
+    expect(line("slipped")!.moves[0]).toMatchObject({ opportunityId: "opp-natbank", causes: ["new evidence"] });
+    expect(line("lost")!.moves[0]!.causes).toContain("CRM edit");
+    expect(line("tcv_change")!.moves[0]!.causes).toContain("CRM edit");
   });
 
   it("writes one sentence from the lines", () => {
-    expect(b.sentence).toBe("The system forecast is down $39.3M: one was lost, one lost commitment, one deal slipped and one changed TCV.");
+    expect(b.sentence).toBe("Down $39.3M: one lost, one lost commitment, one slipped and one changed value.");
   });
 
   it("team scope sums to that manager's change", () => {

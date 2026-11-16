@@ -15,7 +15,7 @@ import { evidenceStatus, gradeOf, type ConditionState, type EvidenceStatus } fro
 import { compareDates, daysBetween, formatDisplayDate, maxDate, type IsoDate } from "@/domain/dates";
 import { NEVER_WAIVED } from "@/domain/config-rules";
 import { CONDITION_LABEL, type ConditionType, type LinkStrength } from "@/domain/entities";
-import { formatMillions, formatUsd } from "@/domain/money";
+import { formatMillions } from "@/domain/money";
 import type { StepTiming } from "@/domain/timing";
 import { useStoreQuery } from "@/features/crm/ui";
 import { COMMITMENT_LABEL, GROUP_LABEL, READINESS_LABEL } from "@/features/shell/labels";
@@ -30,8 +30,8 @@ const STATE_LABEL: Record<ConditionState["state"], string> = {
 };
 const GRADE_LABEL = { direct: "Direct", stated: "Stated", asserted: "Claimed by us" } as const;
 const STATUS_LABEL: Record<EvidenceStatus, string> = {
-  waiting: "waiting for approval",
-  provisional: "applied, awaiting confirmation",
+  waiting: "awaiting review",
+  provisional: "applied, to confirm",
   approved: "approved",
   confirmed: "confirmed",
   rejected: "rejected",
@@ -87,7 +87,7 @@ export default function ForecastDealPage() {
         <div>
           <h1>{view.account?.name ?? o.name}</h1>
           <p className="muted subtitle">
-            {o.name} · {users.find((u) => u.id === o.managerId)?.name} · <Link href={`/crm/opportunities/${o.id}`}>Open in CRM</Link>
+            {o.name}, managed by {users.find((u) => u.id === o.managerId)?.name}. <Link href={`/crm/opportunities/${o.id}`}>Open in CRM</Link>
           </p>
         </div>
       </div>
@@ -100,20 +100,20 @@ export default function ForecastDealPage() {
         <div>
           <span className="number-label">Planned signature</span>
           <strong>{evaluated ? d(view.timing.esd.standard) : o.signedDate ? `Signed ${d(o.signedDate)}` : "—"}</strong>
-          {evaluated ? <span className="muted small">CRM close date {d(o.closeDate)}</span> : null}
+          {evaluated ? <span className="muted small">CRM says {d(o.closeDate)}</span> : null}
         </div>
       </div>
       <p className="verdict-reason">
-        {line.reasons.length ? <>Held back by: {line.reasons.join("; ")}.</> : line.group === "firm" ? "Counted: committed, in writing, and fits even at slow pace." : null}
+        {line.reasons.length ? <>Held back by {line.reasons.join("; ")}.</> : line.group === "firm" ? "Counted. Committed in writing, and fits even if slow." : null}
       </p>
 
       {!evaluated ? null : (
         <>
           <h2>Commitment</h2>
           <p className="muted section-intro">
-            Has the customer decided? Sponsor, budget and vendor selection must be done, the pilot accepted or on track, and the customer
-            heard from in the last 30 days.
-            {line.commitment?.latestEngagement ? ` Last heard from the customer ${d(line.commitment.latestEngagement)}.` : " No recent customer engagement."}
+            Committed means sponsor, budget and vendor selection are done, the pilot is accepted or on track, and the customer replied in
+            the last 30 days.
+            {line.commitment?.latestEngagement ? ` Last reply: ${d(line.commitment.latestEngagement)}.` : " No reply in 30 days."}
           </p>
           <table className="table compact">
             <tbody>
@@ -130,7 +130,7 @@ export default function ForecastDealPage() {
             </tbody>
           </table>
           {line.commitment?.openContrary.length ? (
-            <p className="short">Open contrary signal on {line.commitment.openContrary.map((t) => CONDITION_LABEL[t].toLowerCase()).join(", ")}.</p>
+            <p className="short">The customer contradicted: {line.commitment.openContrary.map((t) => CONDITION_LABEL[t].toLowerCase()).join(", ")}.</p>
           ) : null}
 
           <h2>Timing</h2>
@@ -142,7 +142,7 @@ export default function ForecastDealPage() {
                 <div key={c} className={fits ? "esd fits" : "esd misses"}>
                   <span className="number-label">{c === "standard" ? "Standard pace" : c === "fast" ? "Fast pace" : "Slow pace"}</span>
                   <strong>{v ? d(v) : "No estimate"}</strong>
-                  <span className="small">{fits ? "inside the quarter" : "after quarter end"}</span>
+                  <span className="small">{fits ? "in the quarter" : "after the quarter"}</span>
                 </div>
               );
             })}
@@ -153,12 +153,12 @@ export default function ForecastDealPage() {
 
       {evaluated && !["signed", "firm", "core"].includes(line.group) ? (
         <>
-          <h2>Forecast Interventions</h2>
+          <h2>Ways to pull it in</h2>
           {line.interventions.length === 0 ? (
             <p className="muted section-intro">
               {line.commitment?.level !== "committed"
-                ? `No intervention: this deal's problem is commitment (${line.commitment?.missing.join("; ") || "not committed"}), not timing.`
-                : `No step can be started in parallel to bring this deal into the quarter. Planned signature at standard pace: ${d(view.timing.esd.standard)}.`}
+                ? `None. The problem is commitment, not timing: ${line.commitment?.missing.join("; ") || "not committed"}.`
+                : `None. No step can start early enough. Expected signature: ${d(view.timing.esd.standard)}.`}
             </p>
           ) : (
             line.interventions.map((i) => {
@@ -167,12 +167,12 @@ export default function ForecastDealPage() {
               return (
                 <div key={i.condition} className="intervention">
                   <div>
-                    <strong>Start {CONDITION_LABEL[i.condition].toLowerCase()} now</strong>, in parallel with{" "}
+                    <strong>Start {CONDITION_LABEL[i.condition].toLowerCase()} now</strong>, alongside{" "}
                     {i.lifted.map((t) => CONDITION_LABEL[t].toLowerCase()).join(" and ")}. Ask {owner ? owner.toLowerCase() : "the customer"} to begin by{" "}
                     <strong>{d(i.startBy)}</strong>.
                   </div>
                   <div className="muted small">
-                    Result: {GROUP_LABEL[i.result.group]}, planned signature {d(i.timing.esd.fast)} / {d(i.timing.esd.standard)} / {d(i.timing.esd.slow)}.
+                    Then: {GROUP_LABEL[i.result.group]}, signing {d(i.timing.esd.standard)} ({d(i.timing.esd.fast)} to {d(i.timing.esd.slow)}).
                   </div>
                   <div className="review-actions">
                     {previewing === i.condition ? (
@@ -183,8 +183,8 @@ export default function ForecastDealPage() {
                   </div>
                   {p ? (
                     <div className="preview-box" data-testid="preview">
-                      Preview, nothing saved. System forecast {formatMillions(f.company.core)} → <strong>{formatMillions(p.company.core)}</strong> (Conservative{" "}
-                      {formatMillions(p.company.conservative)}, Stretch {formatMillions(p.company.stretch)}), target {f.company.target === null ? "—" : formatMillions(f.company.target)}.
+                      Preview only, nothing saved. System forecast {formatMillions(f.company.core)} → <strong>{formatMillions(p.company.core)}</strong>
+                      {f.company.target === null ? "" : ` against the ${formatMillions(f.company.target)} target`}.
                     </div>
                   ) : null}
                 </div>
@@ -256,7 +256,6 @@ export default function ForecastDealPage() {
           })}
         </tbody>
       </table>
-      {o.tcv !== null ? <p className="muted small">TCV {formatUsd(o.tcv)}.</p> : null}
     </section>
   );
 }
@@ -322,7 +321,7 @@ function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
       {d0 ? (
         <div className={`dispute ${d0.status.live ? "" : "stale"}`} data-testid="dispute">
           <strong>Dispute {d0.dispute.direction === "in" ? "In" : "Out"}</strong>
-          {d0.status.live ? " · counted in Manager commitment" : ` · stale: ${d0.status.reason}`}
+          {d0.status.live ? ". Counted in Manager commitment." : `. Not counted: ${d0.status.reason}.`}
           <div>&ldquo;{d0.dispute.reason}&rdquo;</div>
           {d0.dispute.bets.length ? (
             <div className="muted small">
@@ -363,8 +362,8 @@ function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
         >
           <p className="muted small" style={{ marginTop: 0 }}>
             {counted
-              ? "Disagree that this deal will sign this quarter? A Dispute Out lowers your Manager commitment. It never changes the system forecast."
-              : "Believe this deal will sign this quarter? Name the step you expect done and by when. It is accepted only if that would make the deal count, and it is checked against what actually happens."}
+              ? "Think it won't sign this quarter? A Dispute Out lowers your Manager commitment. The system forecast doesn't change."
+              : "Think it will sign this quarter? Name the step you'll get done and by when. It's accepted only if that makes the deal count, then checked against what happens."}
           </p>
           <div className="form-grid">
             <label className="field">
@@ -392,7 +391,7 @@ function ManagerPosition({ line, qe }: { line: ForecastLine; qe: IsoDate }) {
           </div>
         </form>
       ) : (
-        <p className="muted">No Dispute on this deal. Only its Sales Manager can raise one.</p>
+        <p className="muted">No Dispute. Only the deal&apos;s Sales Manager can raise one.</p>
       )}
       {error ? <p className="form-error">{error}</p> : null}
     </>
@@ -409,10 +408,10 @@ function AddEmail({ opportunityId, accountName }: { opportunityId: string; accou
     const r = await importEmail(store, opportunityId, raw);
     if (!r.ok) return setMessage(Object.values(r.errors)[0] ?? "Could not read that email.");
     const v = r.value;
-    const parts = [`Added the email of ${formatDisplayDate(v.event.occurredAt)} from ${v.event.sender ?? "unknown sender"} (${v.event.origin === "customer" ? "the customer" : "treated as our side"}).`];
-    if (v.duplicate) parts.push("It repeats an email already received, so nothing new was applied.");
-    else if (v.unread) parts.push("No reading is stored for this email, so it is kept as activity only.");
-    else parts.push(`${v.evidence.length} claim${v.evidence.length === 1 ? "" : "s"} read${v.unverifiable ? `, ${v.unverifiable} discarded because the quote is not in the email` : ""}. Good news waits for review in Evidence review; bad news applies now.`);
+    const parts = [`Added: ${v.event.sender ?? "unknown sender"}, ${formatDisplayDate(v.event.occurredAt)} (${v.event.origin === "customer" ? "customer" : "internal"}).`];
+    if (v.duplicate) parts.push("Already received. Nothing changed.");
+    else if (v.unread) parts.push("Saved as activity. Nothing was read from it.");
+    else parts.push(`Found ${v.evidence.length} claim${v.evidence.length === 1 ? "" : "s"}${v.unverifiable ? `, dropped ${v.unverifiable} whose quote isn't in the email` : ""}. Good news waits for review; bad news applies now.`);
     setMessage(parts.join(" "));
     await refresh();
   }
@@ -422,7 +421,7 @@ function AddEmail({ opportunityId, accountName }: { opportunityId: string; accou
       <h2>Add an email</h2>
       <div className="form">
         <p className="muted small" style={{ marginTop: 0 }}>
-          Import an email file (.eml). The sender&apos;s domain decides whether it counts as the customer speaking.
+          Add an .eml file. Mail from the customer&apos;s domain counts as the customer.
         </p>
         <div className="review-actions">
           <input
@@ -438,7 +437,7 @@ function AddEmail({ opportunityId, accountName }: { opportunityId: string; accou
         </div>
         {samples.length ? (
           <div className="review-actions">
-            <span className="small">Or a sample email for {accountName}:</span>
+            <span className="small">Or pick a sample:</span>
             <select value={sample} onChange={(e) => setSample(e.target.value)} aria-label="Sample email">
               {samples.map((f) => (
                 <option key={f.file} value={f.file}>{f.file.replace(/\.eml$/, "").replace(/-/g, " ")}</option>
@@ -479,7 +478,7 @@ function RevOpsChanges({ line }: { line: ForecastLine }) {
         <ul className="small">
           {waived.map((s) => (
             <li key={s.type}>
-              <strong>{CONDITION_LABEL[s.type]}</strong> waived by RevOps: &ldquo;{s.waiverReason}&rdquo;. A deal with a waiver is never Firm.
+              <strong>{CONDITION_LABEL[s.type]}</strong> waived: &ldquo;{s.waiverReason}&rdquo;. A waived deal is never Firm.
             </li>
           ))}
         </ul>
@@ -497,13 +496,13 @@ function RevOpsChanges({ line }: { line: ForecastLine }) {
                   : { ok: false as const, errors: { form: "No step can be waived on this deal." } }
                 : await changeLink(store, o.id, from, to, strength, reason);
             if (!r.ok) return setMessage(Object.values(r.errors)[0] ?? "Refused.");
-            setMessage(mode === "waive" ? "Step waived. It is in the change log." : "Link changed for this deal only. It is in the change log.");
+            setMessage(mode === "waive" ? "Step waived and logged." : "Link changed and logged.");
             setReason("");
             await refresh();
           }}
         >
           <p className="muted small" style={{ marginTop: 0 }}>
-            RevOps only. Budget and Vendor selection can never be waived. A link change applies to this deal only and cannot make a step wait on itself.
+            RevOps only. Budget and vendor selection can&apos;t be waived. Link changes apply to this deal only.
           </p>
           <div className="form-grid">
             <label className="field">

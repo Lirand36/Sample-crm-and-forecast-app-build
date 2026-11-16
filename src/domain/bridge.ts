@@ -104,17 +104,17 @@ export function standardChangedFor(line: ForecastLine | undefined, baseline: For
 
 export function causesFor(oppId: string, from: IsoDate, to: IsoDate, engineChanged: boolean, data: CauseData, standardChanged = false): string[] {
   const out: string[] = [];
-  if (data.changeLog.some((c) => c.entityId === oppId && CRM_FIELDS.includes(c.field) && inWindow(c.at, from, to))) out.push("CRM change");
+  if (data.changeLog.some((c) => c.entityId === oppId && CRM_FIELDS.includes(c.field) && inWindow(c.at, from, to))) out.push("CRM edit");
   const dealEvidence = data.evidence.filter((e) => e.opportunityId === oppId);
   const evIds = new Set(dealEvidence.map((e) => e.id));
   const eventIds = new Set(dealEvidence.map((e) => e.eventId));
   const newEvidence = data.events.some((e) => eventIds.has(e.id) && inWindow(e.occurredAt, from, to));
   const decided = data.evidenceDecisions.some((d) => evIds.has(d.evidenceId) && inWindow(d.at, from, to));
-  if (newEvidence || decided) out.push("Evidence applied, approved or rejected");
-  if (data.pilotReadings.some((r) => r.opportunityId === oppId && inWindow(r.weekEnding, from, to))) out.push("Pilot reading added");
+  if (newEvidence || decided) out.push("new evidence");
+  if (data.pilotReadings.some((r) => r.opportunityId === oppId && inWindow(r.weekEnding, from, to))) out.push("new pilot reading");
   if (standardChanged) out.push("planning standard changed");
   if (engineChanged) out.push("engine changed");
-  return out.length ? out : ["time passing with no new progress Evidence"];
+  return out.length ? out : ["no progress"];
 }
 
 export function computeBridge(
@@ -189,15 +189,15 @@ export function computeBridge(
 const COUNT = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 const count = (k: number) => COUNT[k] ?? String(k);
 const PHRASE: Record<BridgeLineKind, (k: number) => string> = {
-  new: (k) => `${count(k)} new ${k === 1 ? "deal" : "deals"} came in`,
+  new: (k) => `${count(k)} new`,
   won_outside: (k) => `${count(k)} signed from outside the forecast`,
-  lost: (k) => `${count(k)} ${k === 1 ? "was" : "were"} lost`,
-  other_exclusion: (k) => `${count(k)} ${k === 1 ? "was" : "were"} excluded`,
-  removed: (k) => `${count(k)} ${k === 1 ? "was" : "were"} removed`,
+  lost: (k) => `${count(k)} lost`,
+  other_exclusion: (k) => `${count(k)} excluded`,
+  removed: (k) => `${count(k)} removed`,
   commitment_lost: (k) => `${count(k)} lost commitment`,
-  slipped: (k) => `${count(k)} ${k === 1 ? "deal" : "deals"} slipped`,
+  slipped: (k) => `${count(k)} slipped`,
   upgraded: (k) => `${count(k)} moved in`,
-  tcv_change: (k) => `${count(k)} changed TCV`,
+  tcv_change: (k) => `${count(k)} changed value`,
   transferred_in: (k) => `${count(k)} transferred in`,
   transferred_out: (k) => `${count(k)} transferred out`,
 };
@@ -208,7 +208,7 @@ function money(c: number): string {
 
 function sentence(before: number, after: number, lines: BridgeLine[]): string {
   const delta = after - before;
-  const head = delta === 0 ? "The system forecast is unchanged" : `The system forecast is ${delta < 0 ? "down" : "up"} ${money(delta)}`;
+  const head = delta === 0 ? "No change" : `${delta < 0 ? "Down" : "Up"} ${money(delta)}`;
   if (!lines.length) return `${head}.`;
   const parts = lines.map((l) => PHRASE[l.kind](l.moves.length));
   const list = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
