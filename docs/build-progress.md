@@ -19,8 +19,7 @@ Read this first when resuming. Each line is a pushed, tested piece.
 - [x] Planning-standard approval (DR-01, test 45): RevOps only, new version, never retroactive, logged; standards table with calibration spans in Administration; bridge cause "planning standard changed" (R-14).
 - [x] Backtest (DR-15, test 60): real backtest per stored run of each closed quarter; "Not yet backtested" until then; example quarter BT-1 with no label (R-8, Liran's call).
 - [x] Design pass: runway hero on Forecast (target line, manager marker), teal system / plum manager palette, Schibsted Grotesk, lighter top bar, no all-caps labels, phone layout fixed, product name "Wonderful CRM".
-- [ ] Next: rest of the polish pass and the traceability matrix (spec value vs converted value per test).
-- [ ] Raise and withdraw Disputes from the UI, Bet acceptance check.
-- [ ] Next week control, backtest (BT-1, DR-15 open question R-8).
+- [x] Forecast home rebuilt with Liran (Nov 16): headline vs target, moves with the email behind them, What to do, collapsible cards, Previous quarters under Forecast, managers' forecast broken down, ARR and non-recurring in Deals.
+- [ ] Next: traceability matrix. About 40 of the 61 spec tests are not yet named in the test suite; check each explicitly (spec value vs converted value).
 
 Dollar figures in spec tests convert by re-summing with R-9 amounts (see implementation-decisions.md).

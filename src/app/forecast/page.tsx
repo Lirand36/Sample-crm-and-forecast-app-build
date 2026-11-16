@@ -126,6 +126,12 @@ export default function ForecastHome() {
       </div>
 
       <Headline
+        disputes={f.lines
+          .filter((l) => l.dispute?.status.live)
+          .map((l) => ({
+            name: l.view.account?.name ?? "",
+            amount: ((l.dispute!.dispute.direction === "in" ? 1 : -1) * (l.tcv ?? 0)) as Cents,
+          }))}
         core={c.core}
         conservative={c.conservative}
         stretch={c.stretch}
@@ -305,7 +311,7 @@ export default function ForecastHome() {
 
       <details className="card">
         <summary>
-          <span className="card-title">Deals</span>
+          <span className="card-title">Deals: value, group and what holds each back</span>
           <span className="card-figure">{f.lines.length}</span>
         </summary>
         <div className="card-tools">
@@ -328,6 +334,8 @@ export default function ForecastHome() {
               <th>Deal</th>
               <th>Group</th>
               <th>Expected signature</th>
+              <th className="num">ARR</th>
+              <th className="num">Non-recurring</th>
               <th className="num">TCV</th>
               <th>Held back by</th>
             </tr>
@@ -361,8 +369,10 @@ export default function ForecastHome() {
                         ? `Signed ${formatDisplayDate(o.signedDate)}`
                         : "—"}
                   </td>
+                  <td className="num">{o.arr === null ? "—" : formatMillions(o.arr)}</td>
+                  <td className="num">{o.nonRecurring === null ? "—" : formatMillions(o.nonRecurring)}</td>
                   <td className="num">
-                    {l.tcv === null ? "—" : formatMillions(l.tcv)}
+                    <strong>{l.tcv === null ? "—" : formatMillions(l.tcv)}</strong>
                   </td>
                   <td className="small">{l.reasons.join("; ")}</td>
                 </tr>
@@ -383,7 +393,7 @@ export default function ForecastHome() {
               <th className="num">System forecast</th>
               <th className="num">Target</th>
               <th className="num">Range</th>
-              <th className="num manager">Manager says</th>
+              <th className="num manager">Managers&apos; forecast</th>
             </tr>
           </thead>
           <tbody>
@@ -421,7 +431,7 @@ export default function ForecastHome() {
               <th>Type</th>
               <th className="num">System forecast</th>
               <th className="num">Range</th>
-              <th className="num manager">Managers said</th>
+              <th className="num manager">Managers&apos; forecast</th>
             </tr>
           </thead>
           <tbody>
@@ -454,7 +464,9 @@ function Headline({
   stretch,
   target,
   managerCommitment,
+  disputes,
 }: {
+  disputes: { name: string; amount: Cents }[];
   core: Cents;
   conservative: Cents;
   stretch: Cents;
@@ -502,11 +514,26 @@ function Headline({
         Could land between{" "}
         <span data-testid="conservative">{formatMillions(conservative)}</span>{" "}
         and <span data-testid="stretch">{formatMillions(stretch)}</span>.
-        Managers say{" "}
+      </p>
+      <p className="headline-note">
+        Sales managers&apos; forecast:{" "}
         <span className="manager" data-testid="manager-commitment">
           {formatMillions(managerCommitment)}
         </span>
-        .
+        {disputes.length ? (
+          <>
+            {" "}= {formatMillions(core)} system forecast
+            {disputes.map((d) => (
+              <span key={d.name} className="dispute-term">
+                {d.amount < 0 ? " − " : " + "}
+                {d.name} {formatMillions(Math.abs(d.amount) as Cents)}
+              </span>
+            ))}
+            , where a manager disagrees with the system.
+          </>
+        ) : (
+          ". No manager disagrees with the system."
+        )}
       </p>
     </div>
   );

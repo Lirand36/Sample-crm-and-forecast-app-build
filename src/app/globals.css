@@ -1376,3 +1376,8 @@ details.card[open] {
 @media (prefers-reduced-motion: reduce) {
   details.card > summary::before { transition: none; }
 }
+
+.headline-note .dispute-term {
+  font-weight: 400;
+  color: var(--muted);
+}
