@@ -1,14 +1,15 @@
 :root {
-  --bg: #f7f7f5;
+  /* Cool paper and slate ink. Teal is the system's figure, plum the managers' (PRD §6: never one colour). */
+  --bg: #f3f6f7;
   --surface: #ffffff;
-  --text: #1c1c1a;
-  --muted: #6b6b66;
-  --line: #e2e1dc;
-  --accent: #1f4e79;
-  /* System figures and manager figures never share a colour (PRD §6). */
-  --manager: #8a4b08;
-  --danger: #a32020;
-  --ok: #2e7d4f;
+  --text: #15232c;
+  --muted: #5b6b74;
+  --line: #d8e0e4;
+  --accent: #1d5c63;
+  --accent-soft: #e2eeef;
+  --manager: #7a3e6e;
+  --danger: #b3261e;
+  --ok: #2e6b45;
 }
 
 * {
@@ -19,7 +20,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.55 "Schibsted Grotesk Variable", system-ui, sans-serif;
 }
 
 .shell {
@@ -35,13 +36,15 @@ body {
   gap: 12px;
   flex-wrap: wrap;
   padding: 10px 20px;
-  background: #16324f;
-  color: #fff;
+  background: var(--surface);
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
 }
 
 .topbar .brand {
-  color: #fff;
+  color: var(--text);
   font-weight: 700;
+  letter-spacing: -0.01em;
   text-decoration: none;
   font-size: 16px;
 }
@@ -54,7 +57,7 @@ body {
 }
 
 .topbar .today {
-  color: #c9d6e3;
+  color: var(--muted);
 }
 
 .topbar .role {
@@ -64,7 +67,12 @@ body {
 }
 
 .topbar .role .muted {
-  color: #c9d6e3;
+  color: var(--muted);
+}
+
+.topbar .role select {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .body {
@@ -85,9 +93,8 @@ body {
 }
 
 .nav-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--muted);
   padding: 0 10px 6px;
 }
@@ -101,7 +108,7 @@ body {
 }
 
 .nav-item.active {
-  background: #e8eef5;
+  background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
 }
@@ -173,7 +180,7 @@ h2 {
 
 .num {
   text-align: right !important;
-  font-variant-numeric: tabular-nums;
+  
 }
 
 .manager {
@@ -411,7 +418,7 @@ a.btn {
   margin-left: 6px;
   padding: 1px 7px;
   border-radius: 10px;
-  background: #ecebe6;
+  background: #e6ecef;
   color: var(--muted);
   font-size: 12px;
   font-weight: 500;
@@ -495,7 +502,7 @@ tr.archived td {
 
 .field input:disabled,
 .field select:disabled {
-  background: #f1f0ec;
+  background: #eef2f4;
   color: var(--muted);
 }
 
@@ -637,9 +644,8 @@ tr.archived td {
 }
 
 .number-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--muted);
 }
 
@@ -647,7 +653,7 @@ tr.archived td {
   font-size: 44px;
   font-weight: 700;
   color: var(--accent);
-  font-variant-numeric: tabular-nums;
+  
   line-height: 1.1;
   margin: 4px 0 8px;
 }
@@ -655,7 +661,7 @@ tr.archived td {
 .number-mid {
   font-size: 28px;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  
   margin: 4px 0 6px;
 }
 
@@ -696,7 +702,7 @@ tr.archived td {
 
 .stake-total {
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  
 }
 
 .stake-box ul {
@@ -711,7 +717,7 @@ tr.archived td {
 .bar {
   position: relative;
   height: 14px;
-  background: #f0efea;
+  background: #e9eef0;
   border-radius: 3px;
 }
 
@@ -724,11 +730,11 @@ tr.archived td {
 }
 
 .bar-stretch {
-  background: #c9d6e3;
+  background: #c4dadc;
 }
 
 .bar-core {
-  background: #6f93b8;
+  background: #4f8d93;
 }
 
 .bar-cons {
@@ -755,7 +761,7 @@ tr.archived td {
   border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
-  background: #ecebe6;
+  background: #e6ecef;
   color: var(--muted);
 }
 
@@ -766,7 +772,7 @@ tr.archived td {
 }
 
 .g-core {
-  background: #e3ecf5;
+  background: #e2eeef;
   color: var(--accent);
 }
 
@@ -863,7 +869,7 @@ tr.archived td {
   position: relative;
   flex: 1;
   height: 18px;
-  background: #f4f3ef;
+  background: #eef2f4;
   border-radius: 3px;
 }
 
@@ -875,7 +881,7 @@ tr.archived td {
 }
 
 .cal-slow {
-  background: #c9d6e3;
+  background: #c4dadc;
 }
 
 .cal-std {
@@ -1011,3 +1017,181 @@ tr.archived td {
 .synthetic { border-style: dashed; }
 .synthetic-label { font-weight: 600; margin-top: 0; }
 .synthetic-tag { display: inline-block; font-size: 0.72em; font-weight: 600; padding: 1px 6px; border-radius: 4px; border: 1px dashed currentColor; opacity: 0.75; vertical-align: middle; }
+
+/* ---------- Runway: the quarter at a glance ---------- */
+.runway-block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px 24px 18px;
+  margin: 12px 0 20px;
+}
+
+.runway-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.runway-figure {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+}
+
+.runway-caption {
+  margin: 8px 0 0;
+  max-width: 46ch;
+}
+
+.runway-manager {
+  max-width: 300px;
+  border-left: 3px solid var(--manager);
+  padding-left: 14px;
+}
+
+.runway-manager-figure {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--manager);
+  line-height: 1.1;
+}
+
+.runway-manager p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.runway {
+  position: relative;
+  margin: 40px 0 34px;
+}
+
+.runway-track {
+  position: relative;
+  height: 22px;
+  background: #e9eef0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.seg-conservative,
+.key-conservative {
+  background: var(--accent);
+}
+
+.seg-core,
+.key-core {
+  background: #4f8d93;
+}
+
+.seg-stretch,
+.key-stretch {
+  background: repeating-linear-gradient(135deg, #9cc1c4 0 4px, #e2eeef 4px 8px);
+}
+
+.runway-mark {
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  width: 0;
+}
+
+.runway-mark span {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.runway-mark.end span {
+  right: 6px;
+}
+
+.runway-mark.start span {
+  left: 6px;
+}
+
+.mark-target {
+  border-left: 2px solid var(--text);
+}
+
+.mark-target span {
+  top: -16px;
+}
+
+.mark-manager {
+  border-left: 2px dashed var(--manager);
+}
+
+.mark-manager span {
+  bottom: -18px;
+  color: var(--manager);
+}
+
+.runway-legend {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.runway-legend dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.runway-legend dd {
+  margin: 0;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.key {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .runway-block {
+    padding: 16px;
+  }
+
+  .runway-figure {
+    font-size: 44px;
+  }
+
+  .runway-manager {
+    max-width: none;
+  }
+
+  .topbar .role {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .topbar .role select {
+    flex: 1;
+  }
+}

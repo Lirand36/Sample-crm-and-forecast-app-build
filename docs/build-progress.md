@@ -18,7 +18,8 @@ Read this first when resuming. Each line is a pushed, tested piece.
 - [x] RevOps waiver and per-deal Link change (DR-07, test 53): never Budget or Vendor selection, reason required, acyclic, logged; waived deal never Firm; panel on the deal screen.
 - [x] Planning-standard approval (DR-01, test 45): RevOps only, new version, never retroactive, logged; standards table with calibration spans in Administration; bridge cause "planning standard changed" (R-14).
 - [x] Backtest (DR-15, test 60): real backtest per stored run of each closed quarter; "Not yet backtested" until then; example quarter BT-1 with no label (R-8, Liran's call).
-- [ ] Next: polish pass and the traceability matrix (spec value vs converted value per test).
+- [x] Design pass: runway hero on Forecast (target line, manager marker), teal system / plum manager palette, Schibsted Grotesk, lighter top bar, no all-caps labels, phone layout fixed, product name "Wonderful CRM".
+- [ ] Next: rest of the polish pass and the traceability matrix (spec value vs converted value per test).
 - [ ] Raise and withdraw Disputes from the UI, Bet acceptance check.
 - [ ] Next week control, backtest (BT-1, DR-15 open question R-8).
 

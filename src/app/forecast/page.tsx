@@ -35,7 +35,6 @@ export default function ForecastHome() {
   if (!data) return <p>Loading…</p>;
   const { forecast: f, users } = data;
   const c = f.company;
-  const gap = c.target === null ? null : ((c.core - c.target) as Cents);
   const name = (id: string | null) => (id === null ? "Company" : (users.find((u) => u.id === id)?.name ?? id));
   const scale = Math.max(...f.managers.flatMap((m) => [m.stretch, m.managerCommitment, m.target ?? 0]), 1);
 
@@ -45,7 +44,7 @@ export default function ForecastHome() {
         <div>
           <h1>Forecast</h1>
           <p className="muted subtitle">
-            {f.quarter.label} · as of {formatDisplayDate(f.asOf)} · quarter ends {formatDisplayDate(f.quarter.end)}
+            {f.quarter.label}, as of {formatDisplayDate(f.asOf)}. The quarter ends {formatDisplayDate(f.quarter.end)}.
           </p>
         </div>
         <div className="actions">
@@ -68,30 +67,14 @@ export default function ForecastHome() {
         </div>
       </div>
 
-      <div className="number-row">
-        <div className="number-main">
-          <div className="number-label">System forecast</div>
-          <div className="number-big" data-testid="core">{formatMillions(c.core)}</div>
-          <div className="number-side">
-            <span>Conservative <strong data-testid="conservative">{formatMillions(c.conservative)}</strong></span>
-            <span>Stretch <strong data-testid="stretch">{formatMillions(c.stretch)}</strong></span>
-          </div>
-          {c.target !== null ? (
-            <div className="number-target">
-              Target {formatMillions(c.target)} · {gap! >= 0 ? "above by " : "short by "}
-              <strong className={gap! >= 0 ? "ok" : "short"}>{formatMillions(Math.abs(gap!) as Cents)}</strong>
-            </div>
-          ) : null}
-        </div>
-        <div className="number-manager">
-          <div className="number-label manager">Manager commitment</div>
-          <div className="number-mid manager" data-testid="manager-commitment">{formatMillions(c.managerCommitment)}</div>
-          <div className="muted small">
-            System forecast adjusted by {c.liveDisputes} Dispute{c.liveDisputes === 1 ? "" : "s"} from the Sales Managers. Never mixed into the
-            system number.
-          </div>
-        </div>
-      </div>
+      <Runway
+        conservative={c.conservative}
+        core={c.core}
+        stretch={c.stretch}
+        target={c.target}
+        managerCommitment={c.managerCommitment}
+        liveDisputes={c.liveDisputes}
+      />
 
       {data.bridge ? (
         <div className="bridge">
@@ -314,6 +297,63 @@ function StakeList({ title, hint, lines, detail }: { title: string; hint: string
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function Runway({ conservative, core, stretch, target, managerCommitment, liveDisputes }: {
+  conservative: Cents; core: Cents; stretch: Cents; target: Cents | null; managerCommitment: Cents; liveDisputes: number;
+}) {
+  const max = Math.max(stretch, target ?? 0, managerCommitment, 1) * 1.06;
+  const at = (v: number) => `${(v / max) * 100}%`;
+  const gap = target === null ? null : core - target;
+  const edge = (v: number) => (v / max > 0.72 ? "end" : "start");
+  return (
+    <div className="runway-block">
+      <div className="runway-head">
+        <div>
+          <div className="runway-figure" data-testid="core">{formatMillions(core)}</div>
+          <p className="runway-caption">
+            System forecast for the quarter
+            {gap === null ? "." : gap >= 0 ? (
+              <>, <strong className="ok">{formatMillions(gap as Cents)} above</strong> the {formatMillions(target!)} target.</>
+            ) : (
+              <>, <strong className="short">{formatMillions(Math.abs(gap) as Cents)} short</strong> of the {formatMillions(target!)} target.</>
+            )}
+          </p>
+        </div>
+        <div className="runway-manager">
+          <div className="runway-manager-figure" data-testid="manager-commitment">{formatMillions(managerCommitment)}</div>
+          <p className="small">
+            Manager commitment: the system forecast adjusted by {liveDisputes} Dispute{liveDisputes === 1 ? "" : "s"} from the Sales Managers.
+            Never mixed into the system number.
+          </p>
+        </div>
+      </div>
+      <div
+        className="runway"
+        role="img"
+        aria-label={`Conservative ${formatMillions(conservative)}, system forecast ${formatMillions(core)}, Stretch ${formatMillions(stretch)}${target !== null ? `, target ${formatMillions(target)}` : ""}, Manager commitment ${formatMillions(managerCommitment)}`}
+      >
+        <div className="runway-track">
+          <span className="seg seg-conservative" style={{ left: 0, width: at(conservative) }} />
+          <span className="seg seg-core" style={{ left: at(conservative), width: at(core - conservative) }} />
+          <span className="seg seg-stretch" style={{ left: at(core), width: at(stretch - core) }} />
+        </div>
+        {target !== null ? (
+          <div className={`runway-mark mark-target ${edge(target)}`} style={{ left: at(target) }}>
+            <span>Target {formatMillions(target)}</span>
+          </div>
+        ) : null}
+        <div className={`runway-mark mark-manager ${edge(managerCommitment)}`} style={{ left: at(managerCommitment) }}>
+          <span>Managers {formatMillions(managerCommitment)}</span>
+        </div>
+      </div>
+      <dl className="runway-legend">
+        <div><dt><i className="key key-conservative" />Conservative</dt><dd data-testid="conservative">{formatMillions(conservative)}</dd></div>
+        <div><dt><i className="key key-core" />System forecast</dt><dd>{formatMillions(core)}</dd></div>
+        <div><dt><i className="key key-stretch" />Stretch</dt><dd data-testid="stretch">{formatMillions(stretch)}</dd></div>
+      </dl>
     </div>
   );
 }

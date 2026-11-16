@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/features/shell/AppShell";
 import { StoreProvider } from "@/features/shell/StoreProvider";
 import { PRODUCT_NAME } from "@/features/shell/labels";
+import "@fontsource-variable/schibsted-grotesk";
 import "./globals.css";
 
 export const metadata: Metadata = {

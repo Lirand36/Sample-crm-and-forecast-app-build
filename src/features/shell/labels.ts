@@ -1,6 +1,6 @@
 import type { ContactRole, User, UserRole } from "@/domain/entities";
 
-export const PRODUCT_NAME = "Demo Wonderful CRM";
+export const PRODUCT_NAME = "Wonderful CRM";
 
 export const ROLE_LABEL: Record<UserRole, string> = {
   cro: "CRO",
