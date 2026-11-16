@@ -27,3 +27,23 @@ export const CONTACT_ROLE_LABEL: Record<ContactRole, string> = {
   procurement: "Procurement",
   other: "Other",
 };
+
+export const GROUP_LABEL: Record<import("@/domain/entities").Group, string> = {
+  signed: "Signed",
+  firm: "Firm",
+  core: "Core",
+  stretch: "Stretch",
+  uncommitted: "Uncommitted",
+  late: "Late",
+  timing_unknown: "Timing unknown",
+  excluded: "Excluded",
+};
+
+export const COMMITMENT_LABEL = { committed: "Committed", engaged: "Engaged", unproven: "Unproven", at_risk: "At risk" } as const;
+
+export const READINESS_LABEL = {
+  slow: "Fits even at slow pace",
+  standard: "Fits at standard pace",
+  fast: "Fits only at fast pace",
+  not_ready: "Does not fit this quarter",
+} as const;

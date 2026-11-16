@@ -29,8 +29,13 @@ check("Big Deal naming, no Major Accounts", bodyText.includes("Big Deal") && !bo
 
 await page.getByRole("link", { name: "Forecast", exact: true }).click();
 await page.getByRole("heading", { name: "Forecast", exact: true }).waitFor();
-const runRow = page.locator("tbody tr").first();
-check("Forecast app opens from the menu; Feb 22 run shows Core $65.3M", (await runRow.innerText()).includes("$65.3M"), await runRow.innerText());
+await page.getByTestId("core").waitFor();
+check("Forecast home: system forecast $26.0M", (await page.getByTestId("core").innerText()) === "$26.0M");
+check("Conservative $13.5M, Stretch $29.5M", (await page.getByTestId("conservative").innerText()) === "$13.5M" && (await page.getByTestId("stretch").innerText()) === "$29.5M");
+check("Manager commitment $51.0M in its own box", (await page.getByTestId("manager-commitment").innerText()) === "$51.0M");
+check("target gap shown", (await page.locator(".number-target").innerText()).includes("short by $20.0M"));
+const runRow = page.locator("table").last().locator("tbody tr").first();
+check("Feb 22 stored run shows Core $65.3M", (await runRow.innerText()).includes("$65.3M"), await runRow.innerText());
 
 await page.getByRole("link", { name: "Opportunities", exact: true }).click();
 await page.getByRole("heading", { level: 1, name: /Opportunities/ }).waitFor();
