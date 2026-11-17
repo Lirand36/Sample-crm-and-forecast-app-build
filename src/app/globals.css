@@ -3253,3 +3253,68 @@ strong.manager {
 .gate.result { border-left-color: var(--text); }
 .gate.result.counted { border-left-color: var(--ok); }
 }
+
+/* ---------- Quarter board: clearer hierarchy (column header > deal > reason) ---------- */
+.qcol {
+  padding: 0 16px 12px;
+  border-top-width: 0;
+  overflow: hidden;
+}
+.qcol-head {
+  margin: 0 -16px 6px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.qcol.q-yes .qcol-head {
+  background: #e2eeef;
+  border-top: 4px solid var(--accent);
+}
+.qcol.q-maybe .qcol-head {
+  background: #faf3d9;
+  border-top: 4px solid #c9a227;
+}
+.qcol.q-no .qcol-head {
+  background: #eef1f2;
+  border-top: 4px solid #a9b6bd;
+}
+.qcol h2 {
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.q-yes h2,
+.q-yes .qcol-total {
+  color: var(--accent);
+}
+.q-maybe h2,
+.q-maybe .qcol-total {
+  color: #7a5f0a;
+}
+.q-no h2,
+.q-no .qcol-total {
+  color: #4f5f68;
+}
+.qcol-head .muted {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.qcol-total {
+  font-size: 24px;
+  font-weight: 700;
+}
+.qdeal {
+  padding: 9px 0;
+}
+.qdeal-name,
+.qdeal-amount {
+  font-size: 15px;
+  font-weight: 500;
+}
+.qdeal-amount {
+  color: var(--text);
+}
+.qdeal-why {
+  font-size: 12.5px;
+}
