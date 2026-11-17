@@ -6,9 +6,6 @@ import { useState } from "react";
 import { changeLink, waiveCondition } from "@/application/deal-config";
 import { raiseDispute, withdrawDispute } from "@/application/disputes";
 import { loadForecastWithData } from "@/application/forecast";
-import { importEmail } from "@/application/import-event";
-import { EML_FIXTURES } from "@/seed/extraction-fixtures";
-import { EML_RAW } from "@/seed/eml-raw";
 import { useStore } from "@/features/shell/StoreProvider";
 import { forecastCategory, type ForecastLine } from "@/domain/forecast";
 import type { DealEvent, Evidence, Opportunity, User } from "@/domain/entities";
@@ -451,8 +448,6 @@ export default function ForecastDealPage() {
 
       {evaluated ? <ManagerPosition line={line} qe={qe} users={users} /> : null}
 
-      <AddEmail opportunityId={o.id} accountName={view.account?.name ?? ""} />
-
       {evaluated ? <RevOpsChanges line={line} /> : null}
 
       <details className="steps-table">
@@ -779,95 +774,6 @@ function ManagerPosition({
         </p>
       )}
       {error ? <p className="form-error">{error}</p> : null}
-    </>
-  );
-}
-
-function AddEmail({
-  opportunityId,
-  accountName,
-}: {
-  opportunityId: string;
-  accountName: string;
-}) {
-  const { store, refresh } = useStore();
-  const samples = EML_FIXTURES.filter((f) => f.account === accountName);
-  const [sample, setSample] = useState(samples[0]?.file ?? "");
-  const [message, setMessage] = useState<string | null>(null);
-
-  async function add(raw: string) {
-    const r = await importEmail(store, opportunityId, raw);
-    if (!r.ok)
-      return setMessage(
-        Object.values(r.errors)[0] ?? "Could not read that email.",
-      );
-    const v = r.value;
-    const parts = [
-      `Added: ${v.event.sender ?? "unknown sender"}, ${formatDisplayDate(v.event.occurredAt)} (${v.event.origin === "customer" ? "customer" : "internal"}).`,
-    ];
-    if (v.duplicate) parts.push("Already received. Nothing changed.");
-    else if (v.unread)
-      parts.push("Saved as activity. Nothing was read from it.");
-    else
-      parts.push(
-        `Found ${v.evidence.length} claim${v.evidence.length === 1 ? "" : "s"}${v.unverifiable ? `, dropped ${v.unverifiable} whose quote isn't in the email` : ""}. Good news waits for review; bad news applies now.`,
-      );
-    setMessage(parts.join(" "));
-    await refresh(
-      `Email added: ${v.event.sender ?? "unknown sender"}, ${formatDisplayDate(v.event.occurredAt)}`,
-    );
-  }
-
-  return (
-    <>
-      <h2>Add an email</h2>
-      <div className="form">
-        <p className="muted small" style={{ marginTop: 0 }}>
-          Add an .eml file. Mail from the customer&apos;s domain counts as the
-          customer.
-        </p>
-        <div className="review-actions">
-          <input
-            type="file"
-            accept=".eml,message/rfc822,text/plain"
-            aria-label="Email file"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (file) await add(await file.text());
-              e.target.value = "";
-            }}
-          />
-        </div>
-        {samples.length ? (
-          <div className="review-actions">
-            <span className="small">Or pick a sample:</span>
-            <select
-              value={sample}
-              onChange={(e) => setSample(e.target.value)}
-              aria-label="Sample email"
-            >
-              {samples.map((f) => (
-                <option key={f.file} value={f.file}>
-                  {f.file.replace(/\.eml$/, "").replace(/-/g, " ")}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => add(EML_RAW[sample] ?? "")}
-              data-testid="add-sample"
-            >
-              Add this email
-            </button>
-          </div>
-        ) : null}
-        {message ? (
-          <p className="small" data-testid="import-result">
-            {message}
-          </p>
-        ) : null}
-      </div>
     </>
   );
 }

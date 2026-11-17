@@ -168,8 +168,8 @@ export default function OpportunityDetailPage() {
 
       <h2>Activity ({data.events.length})</h2>
       <p className="muted section-intro">
-        Emails, documents and announcements received on this deal. The Forecast app reads them as evidence for the steps
-        above.
+        Emails, documents and announcements sync here from the mail integration. The Forecast app reads each new item on its own and
+        turns what the customer says into evidence for the steps above.
       </p>
       {data.events.length === 0 ? (
         <p className="muted">No activity on this deal yet.</p>

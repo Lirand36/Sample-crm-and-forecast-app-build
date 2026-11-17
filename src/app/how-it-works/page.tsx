@@ -3,8 +3,8 @@ import Link from "next/link";
 const PIPELINE = [
   {
     stage: "Event",
-    what: "An email, a CRM change or a pilot reading arrives. Each one is stored once, matched by Message-ID or content hash.",
-    example: "Feb 24: email from Luca Bianchi, CISO at National Bank.",
+    what: "The CRM syncs a customer email, a field change or a pilot reading. The forecast picks it up on its own; nobody types it in. Each one is stored once, matched by Message-ID or content hash.",
+    example: "Feb 24: an email from Luca Bianchi, CISO at National Bank, syncs into the CRM.",
   },
   {
     stage: "Evidence",
@@ -69,7 +69,7 @@ const LAYERS = [
   {
     name: "Application",
     path: "src/application",
-    role: "Use cases: load the forecast, raise a dispute, import an email, approve evidence, move to next week. They talk to storage only through ports.",
+    role: "Use cases: load the forecast, raise a dispute, read new CRM activity, approve evidence, move to next week. They talk to storage only through ports.",
   },
   {
     name: "Engine",
@@ -91,7 +91,7 @@ export default function HowItWorks() {
         <div>
           <h1>How it works</h1>
           <p className="muted subtitle">
-            The forecast is computed, not entered. This page follows one email from National Bank all the way to the number.
+            The forecast is computed from the CRM, not entered. This page follows one customer email from National Bank, synced into the CRM, all the way to the number.
           </p>
         </div>
       </div>

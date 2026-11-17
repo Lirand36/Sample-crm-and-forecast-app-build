@@ -53,11 +53,9 @@ await page.getByTestId("preview").waitFor();
 check("test 4: preview shows the system forecast at $46M", (await page.getByTestId("preview").innerText()).includes("$46M"));
 await page.getByRole("button", { name: "Close preview" }).click();
 check("closing the preview stores nothing", (await page.getByTestId("preview").count()) === 0);
-await page.getByLabel("Sample email").selectOption("natbank-postponed-no-date.eml");
-await page.getByTestId("add-sample").click();
-await page.getByTestId("import-result").waitFor();
-await page.locator(".verdict", { hasText: "Timing unknown" }).waitFor();
-check("test 55: adding the postponement email makes National Bank Timing unknown", (await page.locator(".verdict").innerText()).includes("Timing unknown"));
+// Test 55 (a synced postponement email makes National Bank Timing unknown) runs in tests/integration/import-event.test.ts:
+// emails reach the forecast through the CRM's mail sync, not by hand.
+check("no manual email upload on the deal page", (await page.getByRole("heading", { name: "Add an email" }).count()) === 0);
 await page.getByRole("link", { name: "Administration" }).click();
 await page.getByTestId("reset-start").click();
 await page.getByTestId("reset").click();
