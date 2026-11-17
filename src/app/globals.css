@@ -2583,3 +2583,11 @@ strong.manager {
     display: none;
   }
 }
+.slack-error {
+  color: var(--danger);
+  background: #fdecea;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+  font-size: 14px;
+}

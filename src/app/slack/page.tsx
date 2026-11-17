@@ -153,10 +153,7 @@ export default function SlackPage() {
   async function run(command: string, act: () => Promise<{ ok: true; bot: Omit<Extract<Msg, { kind: "bot" }>, "id" | "kind" | "effect"> } | { ok: false; error: string }>) {
     const before = await loadForecast(store);
     const r = await act();
-    if (!r.ok) {
-      post({ kind: "note", text: r.error });
-      return;
-    }
+    if (!r.ok) return r.error;
     const after = await loadForecast(store);
     const effect = effectOf(before, after);
     post([
@@ -166,6 +163,7 @@ export default function SlackPage() {
     setFlash(effect);
     setModal(null);
     await refresh();
+    return null;
   }
 
   function send() {
@@ -544,7 +542,7 @@ function ActionModal(props: {
       | { ok: true; bot: { title: string; lines: string[]; quote?: string; approval?: { evidenceId: string; opportunityId: string; state: "waiting" }; link?: { href: string; label: string }; tone?: "good" | "bad" | "neutral" } }
       | { ok: false; error: string }
     >,
-  ) => Promise<void>;
+  ) => Promise<string | null>;
 }) {
   const { action, lines, contacts, actingUser, asOf, quarterEnd } = props;
   const { store } = useStore();
@@ -572,16 +570,21 @@ function ActionModal(props: {
   const [noDate, setNoDate] = useState(false);
   const [reason, setReason] = useState("");
   const [by, setBy] = useState<string>(quarterEnd);
+  const [error, setError] = useState<string | null>(null);
   const meta = ACTIONS.find((a) => a.key === action)!;
   const name = line ? (line.view.account?.name ?? line.view.opportunity.name) : "";
 
   async function submit() {
-    if (!line) return;
+    setError(await send());
+  }
+
+  async function send(): Promise<string | null> {
+    if (!line) return null;
     const o = line.view.opportunity;
     if (action === "good" || action === "bad") {
       const contact = people.find((p) => p.id === contactNow);
       const untilDate = action === "bad" && !noDate ? (until as IsoDate) : null;
-      await props.onRun(`/forecast ${action === "good" ? "good-news" : "bad-news"} ${name}: ${SHORT_LABEL[stepNow as ConditionType]}`, async () => {
+      return props.onRun(`/forecast ${action === "good" ? "good-news" : "bad-news"} ${name}: ${SHORT_LABEL[stepNow as ConditionType]}`, async () => {
         const r = await logCustomerUpdate(store, {
           opportunityId: o.id,
           conditionType: stepNow as ConditionType,
@@ -614,15 +617,14 @@ function ActionModal(props: {
               },
             };
       });
-      return;
     }
     if (action === "in" || action === "out") {
-      await props.onRun(`/forecast ${action === "in" ? "commit" : "uncommit"} ${name}`, async () => {
+      return props.onRun(`/forecast ${action === "in" ? "commit" : "uncommit"} ${name}`, async () => {
         const r = await raiseDispute(store, {
           opportunityId: o.id,
           direction: action,
           reason,
-          bets: action === "in" && stepNow ? [{ conditionType: stepNow as ConditionType, by: by as IsoDate }] : [],
+          bets: action === "in" ? open.map((t) => ({ conditionType: t, by: by as IsoDate })) : [],
           outCondition: action === "out" && stepNow ? (stepNow as ConditionType) : null,
         });
         if (!r.ok) return { ok: false, error: Object.values(r.errors)[0] ?? "Refused." };
@@ -631,7 +633,7 @@ function ActionModal(props: {
           bot: {
             title:
               action === "in"
-                ? `${actingUser.name} moved ${name} into Commit, betting ${CONDITION_LABEL[stepNow as ConditionType].toLowerCase()} is done by ${short(by as IsoDate)}.`
+                ? `${actingUser.name} moved ${name} into Commit, betting ${open.map((t) => CONDITION_LABEL[t].toLowerCase()).join(", ")} ${open.length > 1 ? "are" : "is"} done by ${short(by as IsoDate)}.`
                 : `${actingUser.name} moved ${name} out of Commit, doubting ${CONDITION_LABEL[stepNow as ConditionType].toLowerCase()}.`,
             quote: reason,
             lines: [
@@ -643,9 +645,8 @@ function ActionModal(props: {
           },
         };
       });
-      return;
     }
-    await props.onRun(`/forecast undo ${name}`, async () => {
+    return props.onRun(`/forecast undo ${name}`, async () => {
       const r = await withdrawDispute(store, line.dispute!.dispute.id);
       if (!r.ok) return { ok: false, error: Object.values(r.errors)[0] ?? "Refused." };
       return { ok: true, bot: { title: `${actingUser.name} withdrew the move on ${name}. Managers' Commit follows the system again for this deal.`, lines: [], tone: "neutral" } };
@@ -681,7 +682,7 @@ function ActionModal(props: {
           <>
             <label className="field">
               <span className="field-label">Deal</span>
-              <select value={line?.view.opportunity.id} onChange={(e) => { setOppId(e.target.value); setStep(""); setContactId(""); setQuote(null); }} aria-label="Deal">
+              <select value={line?.view.opportunity.id} onChange={(e) => { setOppId(e.target.value); setStep(""); setContactId(""); setQuote(null); setError(null); }} aria-label="Deal">
                 {candidates.map((l) => (
                   <option key={l.view.opportunity.id} value={l.view.opportunity.id}>
                     {l.view.account?.name ?? l.view.opportunity.name} ({l.tcv === null ? "—" : formatAmount(l.tcv)}, {COLUMN_LABEL[columnOf(l) ?? "no"].toLowerCase()})
@@ -689,9 +690,16 @@ function ActionModal(props: {
                 ))}
               </select>
             </label>
-            {action !== "undo" ? (
+            {action === "in" ? (
+              <p className="small">
+                <span className="field-label">You bet these steps are done</span>
+                <br />
+                {open.map((t) => CONDITION_LABEL[t]).join(", ")}. The system checks the bet every day; if the date passes with a step open, the move stops counting.
+              </p>
+            ) : null}
+            {action !== "undo" && action !== "in" ? (
               <label className="field">
-                <span className="field-label">{action === "in" ? "The step you bet on" : action === "out" ? "The step you doubt" : "Step"}</span>
+                <span className="field-label">{action === "out" ? "The step you doubt" : "Step"}</span>
                 <select value={stepNow} onChange={(e) => { setStep(e.target.value as ConditionType); setQuote(null); }} aria-label="Step">
                   {open.map((t) => (
                     <option key={t} value={t}>
@@ -751,6 +759,11 @@ function ActionModal(props: {
                 <span className="field-label">Why</span>
                 <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What you know that the system doesn't" aria-label="Why" />
               </label>
+            ) : null}
+            {error ? (
+              <p className="slack-error" role="alert">
+                {error}
+              </p>
             ) : null}
             <div className="slack-modal-foot">
               <button type="button" className="btn" onClick={props.onClose}>
