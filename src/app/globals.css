@@ -3143,3 +3143,113 @@ strong.manager {
 .tr-note {
   font-weight: 400;
 }
+
+
+/* ---------- Decision trail (restored) ---------- */
+.pilot-scroll {
+  overflow-x: auto;
+}
+/* ---------- Decision trail ---------- */
+.trail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 0.8fr);
+  gap: 0;
+  margin: 6px 0 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.gate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 18px 14px 16px;
+  border-top: 4px solid var(--line);
+  min-width: 0;
+}
+.gate + .gate {
+  border-left: 1px solid var(--line);
+}
+.gate:not(.result)::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  transform: translateY(-50%) rotate(45deg);
+  z-index: 1;
+}
+.gate.m-pass {
+  border-top-color: var(--accent);
+}
+.gate.m-partial {
+  border-top-color: #c9a227;
+}
+.gate.m-fail {
+  border-top-color: var(--danger);
+}
+.gate.m-skip {
+  color: var(--muted);
+}
+.gate.m-skip .gate-value {
+  font-weight: 500;
+}
+.gate-step {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.gate-title {
+  font-size: 12px;
+  color: var(--muted);
+}
+.gate-value {
+  font-size: 15px;
+  line-height: 1.3;
+}
+.gate-note {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.gate.result {
+  background: #f6f9fa;
+  border-top-color: var(--text);
+  align-items: flex-start;
+}
+.gate.result.counted {
+  border-top-color: var(--ok);
+}
+@media (max-width: 900px) {
+.trail {
+    grid-template-columns: 1fr;
+  }
+.gate + .gate {
+    border-left: 0;
+    border-top-width: 4px;
+  }
+.gate:not(.result)::after {
+    display: none;
+  }
+.gate {
+    border-top: 0;
+    border-left: 4px solid var(--line);
+  }
+.gate + .gate {
+    border-left: 4px solid var(--line);
+    border-top: 1px solid var(--line);
+  }
+.gate.m-pass { border-left-color: var(--accent); }
+.gate.m-partial { border-left-color: #c9a227; }
+.gate.m-fail { border-left-color: var(--danger); }
+.gate.result { border-left-color: var(--text); }
+.gate.result.counted { border-left-color: var(--ok); }
+}

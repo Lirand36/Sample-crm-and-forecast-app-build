@@ -227,6 +227,7 @@ check("quarter board: $26M signs this quarter, Airline Group is upside, National
   /Signs this quarter[\s\S]*\$26M/.test(board) && /Could sign this quarter[\s\S]*Airline Group[\s\S]*Not this quarter/.test(board) && /Not this quarter[\s\S]*National Bank/.test(board), board.replace(/\s+/g, " ").slice(0, 300));
 await page.goto(`${base}/forecast/deals/opp-airline`);
 await page.getByTestId("signature-path").waitFor();
+check("styles load: the decision trail is laid out as a grid", (await page.locator(".trail").evaluate((e) => getComputedStyle(e).display)) === "grid");
 await page.locator(".sp-station.k-in_progress", { hasText: "Pilot" }).click();
 await page.getByTestId("pilot-chart").waitFor();
 const pilotText = await page.getByTestId("pilot-chart").innerText();
