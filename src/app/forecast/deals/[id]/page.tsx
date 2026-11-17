@@ -772,8 +772,9 @@ function ManagerPosition({
         </form>
       ) : (
         <p className="muted">
-          The manager follows the system here. Only the deal&apos;s Sales
-          Manager can change it.
+          {counted
+            ? `Counted by both the system and the manager. Only ${managerName} can move it out of Commit.`
+            : `Not counted by the system or the manager. Only ${managerName} can move it into Commit.`}
         </p>
       )}
       {error ? <p className="form-error">{error}</p> : null}
