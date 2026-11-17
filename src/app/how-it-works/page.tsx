@@ -52,14 +52,14 @@ const PRINCIPLES = [
   },
   {
     t: "The CRM is the single source of truth",
-    d: "Emails, calls and pilot readings sync in from the CRM. Nobody types the forecast, and nobody pastes emails into it.",
+    d: "Emails, call transcripts and pilot readings sync in from the CRM and the call recorder. Nobody types the forecast, and nobody pastes emails into it.",
   },
 ];
 
 const JOURNEY = [
   {
     stage: "Event",
-    what: "The CRM syncs a customer email. Stored once, matched by Message-ID or content hash, so a re-sync never double-counts.",
+    what: "The CRM syncs a customer email (or a call transcript from the call recorder). Stored once, matched by Message-ID or content hash, so a re-sync never double-counts.",
     ex: "Feb 24: email from Luca Bianchi, CISO at National Bank.",
   },
   {
@@ -364,12 +364,12 @@ export default function HowItWorks() {
           <section id="ai" className="hiw-sec hiw-ai">
             <h2>Where AI fits: it reads, rules decide, people approve</h2>
             <p>
-              The hardest input to a forecast is unstructured: emails, call notes, meeting transcripts. That is where a language model is strong,
-              and that is where it sits. The <strong>extraction provider</strong> reads each synced message and returns structured evidence: which
+              The hardest input to a forecast is unstructured: emails and, above all, call transcripts. Across a sales cycle most of what a
+              customer commits to is said on calls, not written. That is where a language model is strong, and that is where it sits. The <strong>extraction provider</strong> reads each synced message and returns structured evidence: which
               step it is about, whether it is progress, done or a hold, the hold dates, and the exact quote that supports it.
             </p>
             <div className="hiw-ai-flow" aria-hidden>
-              <span>Email or call</span>
+              <span>Email or call transcript</span>
               <i>→</i>
               <span className="ai">AI extraction</span>
               <i>→</i>
@@ -381,10 +381,14 @@ export default function HowItWorks() {
             </div>
             <ul className="hiw-list">
               <li>
+                <strong>On a call, only the customer&apos;s words count.</strong> The transcript is split by speaker; what our seller says
+                (&quot;so you&apos;ll sign by March?&quot;) is kept as context but never moves a step. Only a customer speaker&apos;s sentence becomes evidence.
+              </li>
+              <li>
                 <strong>The model never sets the number.</strong> It proposes evidence; rules a CFO can read decide the group.
               </li>
               <li>
-                <strong>Every claim carries a quote,</strong> so a hallucination is visible: the sentence is either in the email or it is not.
+                <strong>Every claim carries a quote,</strong> so a hallucination is visible: the sentence is either in the email or transcript, with its timestamp, or it is not.
               </li>
               <li>
                 <strong>Good news is reviewed by a person</strong> before it counts; bad news counts at once and is confirmed later.
