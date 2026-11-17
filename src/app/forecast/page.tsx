@@ -1,5 +1,6 @@
 "use client";
 
+import { QuarterMap } from "@/features/forecast/QuarterMap";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { loadBridge, loadForecast } from "@/application/forecast";
@@ -139,6 +140,8 @@ export default function ForecastHome() {
         stretch={c.stretch}
         target={c.target}
       />
+
+      <QuarterMap lines={f.lines} asOf={f.asOf} quarterEnd={f.quarter.end} />
 
       <ManagersCommit
         core={c.core}
@@ -574,6 +577,11 @@ function Headline({
         role="img"
         aria-label={`${formatAmount(core)} of ${target === null ? "no target" : formatAmount(target)}`}
       >
+        <span
+          className="progress-range"
+          style={{ left: pct(conservative), width: `calc(${pct(stretch)} - ${pct(conservative)})` }}
+          title={`Could land between ${formatAmount(conservative)} and ${formatAmount(stretch)}`}
+        />
         <span className="progress-fill" style={{ width: pct(core) }} />
         {target !== null ? (
           <span className="progress-target" style={{ left: pct(target) }} />

@@ -221,6 +221,17 @@ check("test 60: BT-1 shows $1M / $3M / $4,000,000, Actual $2,000,000, precision 
   ["$1M / $3M / $4M", "$2M", "33.3%", "50.0%", "+$1M", "−2.5 days"].every((x) => bt.includes(x)), bt.replace(/\s+/g, " ").slice(0, 300));
 check("example carries no synthetic label (R-8, Liran's decision)", (await page.locator('[data-testid="synthetic"] .synthetic-tag').count()) === 0);
 
+// Visual path and quarter map
+await page.goto(`${base}/forecast`);
+await page.getByTestId("quarter-map").waitFor();
+check("quarter map: one row per evaluated deal, Airline Group at Mar 22", /Airline Group[\s\S]*Mar 22/.test(await page.getByTestId("quarter-map").innerText()));
+await page.goto(`${base}/forecast/deals/opp-airline`);
+await page.getByTestId("signature-path").waitFor();
+await page.locator(".sp-station.k-in_progress", { hasText: "Pilot" }).click();
+await page.getByTestId("pilot-chart").waitFor();
+const pilotText = await page.getByTestId("pilot-chart").innerText();
+check("pilot chart: on track, trend 70.5% against the 70% target", pilotText.includes("On track") && pilotText.includes("70.5%"), pilotText.slice(0, 200));
+
 // Planning standard v2 (test 45): RevOps approves Procurement and legal 12 / 30 / 40 from today
 await role.selectOption("u-revops");
 await page.getByRole("link", { name: "Administration" }).click();

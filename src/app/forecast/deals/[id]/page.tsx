@@ -22,6 +22,9 @@ import { formatAmount } from "@/domain/money";
 import type { StepTiming } from "@/domain/timing";
 import { useStoreQuery } from "@/features/crm/ui";
 import { COMMITMENT_LABEL, GROUP_LABEL, READINESS_LABEL } from "@/features/shell/labels";
+import { SignaturePath } from "@/features/forecast/SignaturePath";
+import { PilotChart, pilotVerdictLabel } from "@/features/forecast/PilotChart";
+import { pilotInsight } from "@/domain/pilot-insight";
 
 const COMMERCIAL: ConditionType[] = ["executive_sponsor", "budget", "vendor_selection"];
 const STATE_LABEL: Record<ConditionState["state"], string> = {
@@ -80,6 +83,8 @@ export default function ForecastDealPage() {
       .sort((a, b) => compareDates(a.ev.occurredAt, b.ev.occurredAt));
   const stateOf = (t: ConditionType) => view.states.find((s) => s.type === t)!;
   const stepOf = (t: ConditionType) => view.timing.steps.find((s) => s.type === t)!;
+  const plan = data.pilotPlans.find((p) => p.opportunityId === id) ?? null;
+  const pilot = plan ? { plan, insight: pilotInsight(plan, data.pilotReadings, f.asOf) } : null;
 
   return (
     <section>
@@ -109,6 +114,55 @@ export default function ForecastDealPage() {
       <p className="verdict-reason">
         {line.reasons.length ? <>Held back by {line.reasons.join("; ")}.</> : line.group === "firm" ? "Counted. Committed in writing, and fits even if slow." : null}
       </p>
+
+      {evaluated ? (
+        <>
+          <h2>Signature Path</h2>
+          <SignaturePath
+            states={view.states}
+            steps={view.timing.steps}
+            asOf={f.asOf}
+            quarterEnd={qe}
+            signature={view.timing.esd.standard}
+            flags={pilot && stateOf("pilot").state !== "done" ? { pilot: { text: pilotVerdictLabel(pilot.insight), warn: ["failed", "at_risk"].includes(pilot.insight.verdict) } } : {}}
+            detail={(t) => {
+              const s = stateOf(t);
+              const step = stepOf(t);
+              const ev = evidenceFor(t);
+              return (
+                <>
+                  <div className="sp-detail-head">
+                    <strong>{CONDITION_LABEL[t]}</strong>
+                    <span className="muted small">
+                      {STATE_LABEL[s.state]}
+                      {s.doneOn ? ` ${d(s.doneOn)}` : ""}
+                      {owners.get(t) ? `. Owner: ${owners.get(t)}` : ""}
+                      {["done", "waived"].includes(s.state)
+                        ? ""
+                        : `. Finishes ${(["fast", "standard", "slow"] as const)
+                            .map((c) => (step.finish[c] ? d(step.finish[c]) : NO_ESTIMATE[step.remaining[c] as string] ?? "no estimate"))
+                            .join(" / ")} (fast / standard / slow)`}
+                    </span>
+                  </div>
+                  {t === "pilot" && pilot ? <PilotChart plan={pilot.plan} insight={pilot.insight} signoffBy={stepOf("pilot").finish.slow} /> : null}
+                  {ev.length === 0 ? (
+                    <p className="muted small">No evidence yet.</p>
+                  ) : (
+                    ev.map(({ e, ev: event, status }) => (
+                      <div key={e.id} className={status === "rejected" || status === "duplicate" || status === "unverifiable" ? "ev struck" : "ev"}>
+                        <span className="small muted">
+                          {d(event.occurredAt)}, {GRADE_LABEL[gradeOf(event)].toLowerCase()}, {STATUS_LABEL[status]}
+                        </span>
+                        <div className="quote">&ldquo;{e.quote}&rdquo;</div>
+                      </div>
+                    ))
+                  )}
+                </>
+              );
+            }}
+          />
+        </>
+      ) : null}
 
       <PendingReview
         opp={o}
