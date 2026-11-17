@@ -23,6 +23,7 @@ import type { StepTiming } from "@/domain/timing";
 import { useStoreQuery } from "@/features/crm/ui";
 import { COMMITMENT_LABEL, GROUP_LABEL, READINESS_LABEL } from "@/features/shell/labels";
 import { SignaturePath } from "@/features/forecast/SignaturePath";
+import { DecisionTrail } from "@/features/forecast/DecisionTrail";
 import { PilotChart, pilotVerdictLabel } from "@/features/forecast/PilotChart";
 import { pilotInsight } from "@/domain/pilot-insight";
 
@@ -114,6 +115,8 @@ export default function ForecastDealPage() {
       <p className="verdict-reason">
         {line.reasons.length ? <>Held back by {line.reasons.join("; ")}.</> : line.group === "firm" ? "Counted. Committed in writing, and fits even if slow." : null}
       </p>
+
+      <DecisionTrail line={line} />
 
       {evaluated ? (
         <>
