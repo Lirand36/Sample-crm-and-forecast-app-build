@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AiTag } from "@/features/forecast/AiTag";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { changeLink, waiveCondition } from "@/application/deal-config";
@@ -277,6 +278,7 @@ export default function ForecastDealPage() {
                           {STATUS_LABEL[status]}
                         </span>
                         <div className="quote">&ldquo;{e.quote}&rdquo;</div>
+                        <AiTag e={e} ev={event} />
                       </div>
                     ))
                   )}
@@ -500,6 +502,7 @@ export default function ForecastDealPage() {
                         {d(ev.occurredAt)} · {GRADE_LABEL[gradeOf(ev)]} ·{" "}
                         {STATUS_LABEL[status]}
                         <div className="quote">&ldquo;{e.quote}&rdquo;</div>
+                        <AiTag e={e} ev={ev} />
                       </div>
                     ))}
                     {evidenceFor(s.type).length === 0 ? (
@@ -1016,6 +1019,7 @@ function PendingItem(props: {
         {props.overdue ? <span className="badge overdue">Overdue</span> : null}
       </div>
       <div className="quote">&ldquo;{e.quote}&rdquo;</div>
+      <AiTag e={e} ev={ev} />
       <div className="muted small">
         {status === "waiting"
           ? "Good news: counts once approved."

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AiTag } from "@/features/forecast/AiTag";
 import { useState } from "react";
 import { reviewEvidence } from "@/application/evidence";
 import { evidenceStatus, gradeOf, type EvidenceStatus } from "@/domain/condition-state";
@@ -155,6 +156,7 @@ function ReviewCard(props: {
       </div>
       <div className="review-claim">{e.summary}</div>
       <div className="quote">&ldquo;{e.quote}&rdquo;</div>
+      <AiTag e={e} ev={ev} />
       <div className="muted small">
         From {ev.sender ?? "unknown"}{props.contactRole ? ` (${props.contactRole})` : ""} · {GRADE_LABEL[gradeOf(ev)]} · {STATUS_LABEL[props.status]}
       </div>
