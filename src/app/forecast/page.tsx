@@ -1,5 +1,6 @@
 "use client";
 
+import { Focus } from "@/features/forecast/Focus";
 import { QuarterMap } from "@/features/forecast/QuarterMap";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -61,15 +62,17 @@ export default function ForecastHome() {
         s.repos.evidence.list(),
         s.repos.evidenceDecisions.list(),
       ]);
-      const waiting = evidence.filter(
-        (e) => evidenceStatus(e, decisions) === "waiting",
-      ).length;
+      const waitingList = evidence.filter((e) => evidenceStatus(e, decisions) === "waiting");
+      const provisional = evidence.filter((e) => evidenceStatus(e, decisions) === "provisional");
+      const waiting = waitingList.length;
       return {
         forecast,
         users,
         bridge,
         reasons,
         waiting,
+        waitingList,
+        provisional,
         runs: runs.sort((a, b) => b.seq - a.seq),
       };
     },
@@ -141,6 +144,7 @@ export default function ForecastHome() {
         target={c.target}
       />
 
+      <Focus f={f} me={actingUser} users={data.users} waiting={data.waitingList} provisional={data.provisional} />
       <QuarterMap lines={f.lines} quarterEnd={f.quarter.end} />
 
       <ManagersCommit
@@ -625,7 +629,7 @@ function ManagersCommit({
 }) {
   const diff = (total - core) as Cents;
   return (
-    <details className="card" open>
+    <details className="card" id="manager-commitment" open>
       <summary>
         <span className="card-title">Managers&apos; Commit</span>
         <span className="card-figure manager" data-testid="manager-commitment">
