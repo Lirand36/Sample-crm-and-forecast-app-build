@@ -8,9 +8,9 @@ export function AiTag({ e, ev }: { e: Evidence; ev: DealEvent }) {
   return (
     <span
       className="ai-tag"
-      title={`Read by the AI extraction model (${e.extractionVersion}) from the synced ${ev.channel}. The quote is copied verbatim and is checked against the source; the model never sets the forecast.`}
+      title={`Read by the AI extraction model (${e.extractionVersion}) from the synced ${ev.sourceType === "meeting_transcript" ? "call transcript (customer lines only)" : ev.channel}. The quote is copied verbatim and is checked against the source; the model never sets the forecast.`}
     >
-      <span aria-hidden>✦</span> AI-extracted
+      <span aria-hidden>✦</span> AI-extracted{ev.sourceType === "meeting_transcript" ? " from a call" : ""}
     </span>
   );
 }

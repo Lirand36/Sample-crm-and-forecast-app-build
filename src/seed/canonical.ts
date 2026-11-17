@@ -35,7 +35,7 @@ import { eventContentHash } from "@/domain/hash";
 import { usdM, type Cents } from "@/domain/money";
 import { CONDITION_TEMPLATES } from "./templates";
 
-export const SEED_VERSION = "seed-2027Q1-v4";
+export const SEED_VERSION = "seed-2027Q1-v5";
 export const DEMO_AS_OF = isoDate("2027-03-01");
 export const QUARTER_ID = "2027-Q1";
 export const EXTRACTION_VERSION = "fixture-extraction-v1";
@@ -342,6 +342,12 @@ function doc(deal: string, local: string, date: string, sourceType: SourceType, 
   return { deal, date, sourceType, origin: "customer", sender: mail(deal, local), channel: "document", subject, text, claims };
 }
 
+/** Shorthand for a call transcript synced from the call recorder. Speaker-labelled; only customer lines are read. */
+function call(deal: string, local: string, date: string, subject: string, lines: [string, string][], claims: ClaimSeed[]): EventSeed {
+  const text = lines.map(([who, said]) => `${who}: ${said}`).join("\n");
+  return { deal, date, sourceType: "meeting_transcript", origin: "customer", sender: mail(deal, local), channel: "meeting", subject, text, claims };
+}
+
 /** Shared pre-signature history for a deal whose standard Conditions closed in order. */
 function done(condition: ConditionType, summary: string, quote: string, by: string): ClaimSeed {
   return { condition, claim: condition === "vendor_selection" ? "selected" : "done", summary, quote, decision: approvedBy(by) };
@@ -445,6 +451,12 @@ const EVENT_SEEDS: EventSeed[] = [
   email("insurance", "legal", "2027-02-15", "Contract review", "Our legal team has started the review and sent the first comments.", [
     { condition: "procurement_legal", claim: "progress", summary: "First contract comments sent", quote: "sent the first comments", decision: approvedBy(MGR_B) },
   ]),
+  call("insurance", "legal", "2027-02-20", "Contract walkthrough (transcript, 24 min)", [
+    ["[02:45] Daniel Mor (Wonderful, Account Executive)", "So legal is basically done, right? We can count on signing this month?"],
+    ["[03:10] Petra Schulz (Insurance Group, General Counsel)", "Our review is under way; we will return our redlines on the master agreement next week."],
+  ], [
+    { condition: "procurement_legal", claim: "progress", summary: "Legal review under way, redlines next week (call)", quote: "Our review is under way; we will return our redlines on the master agreement next week.", decision: approvedBy(MGR_B) },
+  ]),
   email("insurance", "legal", "2027-02-24", "Contract review", "We have returned our redlines on the master agreement.", [
     { condition: "procurement_legal", claim: "progress", summary: "Redlines returned", quote: "We have returned our redlines on the master agreement.", decision: approvedBy(MGR_B) },
   ]),
@@ -499,6 +511,13 @@ const EVENT_SEEDS: EventSeed[] = [
   ]),
   email("airline", "procurement", "2027-02-20", "Contract", "Our procurement team has sent the first contract comments.", [
     { condition: "procurement_legal", claim: "progress", summary: "First contract comments sent", quote: "sent the first contract comments", decision: approvedBy(MGR_A) },
+  ]),
+  call("airline", "procurement", "2027-02-24", "Weekly deal call (transcript, 31 min)", [
+    ["[04:12] Daniel Mor (Wonderful, Account Executive)", "Where are you on the contract? Could we have it signed by mid-March?"],
+    ["[04:30] Sergio Ramos (Airline Group, Procurement Lead)", "We are working through your comments on the liability clause this week."],
+    ["[05:02] Sergio Ramos (Airline Group, Procurement Lead)", "I can't promise a signing date until the pilot review is done."],
+  ], [
+    { condition: "procurement_legal", claim: "progress", summary: "Procurement working through contract comments (call)", quote: "We are working through your comments on the liability clause this week.", decision: approvedBy(MGR_A) },
   ]),
   email("airline", "procurement", "2027-02-27", "Contract", "The second set of contract comments is attached.", [
     { condition: "procurement_legal", claim: "progress", summary: "Second set of contract comments", quote: "The second set of contract comments is attached.", decision: approvedBy(MGR_A) },
@@ -574,6 +593,13 @@ const EVENT_SEEDS: EventSeed[] = [
   ]),
   email("natbank", "g.romano", "2027-02-10", "Decision", "We have decided to go with Wonderful.", [
     done("vendor_selection", "Selection stated", "We have decided to go with Wonderful.", REVOPS),
+  ]),
+  call("natbank", "ciso.office", "2027-02-12", "Security review call (transcript, 42 min)", [
+    ["[11:05] Daniel Mor (Wonderful, Account Executive)", "Great, so security should be wrapped up well before quarter end."],
+    ["[11:20] Luca Bianchi (National Bank, CISO)", "We are reviewing your answers to the questionnaire now."],
+    ["[12:02] Luca Bianchi (National Bank, CISO)", "Final approval needs the risk committee; I don't control its calendar."],
+  ], [
+    { condition: "security", claim: "progress", summary: "CISO reviewing questionnaire answers (call)", quote: "We are reviewing your answers to the questionnaire now.", decision: approvedBy(MGR_A) },
   ]),
   email("natbank", "g.romano", "2027-02-17", "Timing", "We intend to sign this quarter.", [
     { condition: "executive_sponsor", claim: "intent", summary: "Sponsor restates intent to sign this quarter", quote: "We intend to sign this quarter.", decision: approvedBy(MGR_A) },

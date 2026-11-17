@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { EventText } from "@/features/crm/EventText";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { changeLogFor, updateContact } from "@/application/crm";
@@ -121,7 +122,7 @@ export default function ContactDetailPage() {
                 </td>
                 <td>
                   {e.subject ? <strong>{e.subject}: </strong> : null}
-                  {e.text}
+                  <EventText e={e} />
                 </td>
               </tr>
             ))}

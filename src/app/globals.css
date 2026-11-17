@@ -3114,3 +3114,32 @@ strong.manager {
     margin-left: 0 !important;
   }
 }
+
+/* ---------- Call transcripts ---------- */
+.transcript {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  border-left: 3px solid #ddd3f5;
+  padding-left: 10px;
+}
+.tr-line {
+  display: grid;
+  gap: 1px;
+}
+.tr-who {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5b3fa8;
+}
+.tr-line.ours .tr-who,
+.tr-line.ours .tr-said {
+  color: var(--muted);
+  font-weight: 400;
+}
+.tr-line.ours .tr-said {
+  font-style: italic;
+}
+.tr-note {
+  font-weight: 400;
+}

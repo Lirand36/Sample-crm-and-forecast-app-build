@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { EventText } from "@/features/crm/EventText";
 import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { archiveOpportunity, changeLogFor, updateOpportunity } from "@/application/crm";
@@ -17,7 +18,7 @@ import { useStore } from "@/features/shell/StoreProvider";
 const EVENT_KIND: Record<DealEvent["channel"], string> = {
   email: "Email",
   document: "Document",
-  meeting: "Meeting",
+  meeting: "Call",
   news: "Announcement",
   note: "Internal note",
   paste: "Note",
@@ -194,7 +195,7 @@ export default function OpportunityDetailPage() {
                 <td className="small">{e.sender ?? "—"}{e.origin === "internal" ? <div className="muted">our team</div> : null}</td>
                 <td>
                   {e.subject ? <strong>{e.subject}: </strong> : null}
-                  {e.text}
+                  <EventText e={e} />
                 </td>
               </tr>
             ))}
