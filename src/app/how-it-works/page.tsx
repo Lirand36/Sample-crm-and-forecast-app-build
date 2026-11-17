@@ -20,9 +20,18 @@ const TOC: { id: string; label: string; part?: string }[] = [
   { id: "ai", label: "Where AI fits" },
   { id: "metrics", label: "Business metrics" },
   { id: "not", label: "What we chose not to do" },
+  { id: "why", label: "Why it beats stage × %" },
+  { id: "adoption", label: "Rolling it out" },
   { id: "architecture", label: "Architecture", part: "The build" },
   { id: "guarantees", label: "Guarantees" },
   { id: "quality", label: "Testing and delivery" },
+];
+
+const WHY = [
+  { t: "Ten big deals, not ten thousand small ones", d: "80% of a $20M deal is $16M, but the deal lands at $20M or $0. Each large deal is judged on its own." },
+  { t: "Time is part of the answer", d: "A deal in Contract with 60 days of legal ahead still counts in a stage model. Here, open steps and their durations decide if it fits the quarter." },
+  { t: "The customer moves the step, not the rep", d: "Only customer words and actions move a step, so optimism stays out of the number." },
+  { t: "Bad news shows up the same day", d: "Not at quarter end. And the backtest compares both methods on closed quarters, so it can be measured, not believed." },
 ];
 
 const PRINCIPLES = [
@@ -329,6 +338,10 @@ export default function HowItWorks() {
               One number is what the CRO reports; the range is how much to trust it. The home page also answers the plain question per deal
               (signs this quarter, could sign, not this quarter) and what changed since last week.
             </p>
+            <p>
+              The width is the honest uncertainty. A narrow range means the number can be trusted. A wide one means the quarter depends on a few
+              undecided deals, and that is where the work is.
+            </p>
           </section>
 
           <section id="managers" className="hiw-sec">
@@ -338,6 +351,10 @@ export default function HowItWorks() {
               that named steps will be done by a date; the move is accepted only if those steps would really make the deal count. Or they move a
               deal <strong>out</strong>, naming the step they doubt. The system checks every bet daily; if a date passes with the step still open,
               the move stops counting.
+            </p>
+            <p className="hiw-small">
+              Example: the system has Airline in Stretch. The manager moves it into Commit with the bet &quot;the customer formally selects us by
+              March 10&quot;. If that happens, the manager was right, on the record. If the date passes, the bet shows as missed.
             </p>
             <p>
               The result is two honest numbers side by side: what the evidence says, and what the managers believe. The gap between them is where
@@ -358,6 +375,11 @@ export default function HowItWorks() {
             <p className="hiw-small">
               Managers can do the most common actions from <Link href="/slack">Slack</Link>: report good or bad news, move a deal, undo a move, and
               see at once what it did to the number.
+            </p>
+            <p className="hiw-small">
+              Each role opens the forecast to <strong>Your focus today</strong>: RevOps sees what waits for review and where managers disagree, a
+              manager sees their own deals and moves, the VP sees the gap to target per manager. Same number for everyone; only the to-do list
+              changes.
             </p>
           </section>
 
@@ -426,6 +448,37 @@ export default function HowItWorks() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section id="why" className="hiw-sec">
+            <h2>Why it beats stage × percentage</h2>
+            <div className="hiw-grid two">
+              {WHY.map((x) => (
+                <div key={x.t} className="hiw-card">
+                  <strong>{x.t}</strong>
+                  <p>{x.d}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section id="adoption" className="hiw-sec">
+            <h2>Rolling it out without overriding anyone</h2>
+            <p>
+              The system never overrides people. It gives their judgement its own number, and lets the results decide. Reps type nothing new, and a
+              manager who beats the system gets the credit.
+            </p>
+            <ol className="hiw-small">
+              <li>
+                <strong>One quarter in shadow mode.</strong> It runs next to the current forecast and changes no process.
+              </li>
+              <li>
+                <strong>The VP as a partner.</strong> They see the full picture first, and use the gap to run the forecast call.
+              </li>
+              <li>
+                <strong>Compare at quarter end.</strong> The backtest scores both the system and the managers. Trust is earned with data.
+              </li>
+            </ol>
           </section>
 
           <p className="hiw-part">Part 2 · The build</p>
