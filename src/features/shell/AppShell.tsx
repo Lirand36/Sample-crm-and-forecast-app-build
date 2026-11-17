@@ -23,7 +23,10 @@ const APPS_NAV: NavItem[] = [
   { href: "/forecast", label: "Forecast" },
   { href: "/forecast/backtest", label: "Previous quarters", sub: true },
 ];
-const ADMIN_NAV: NavItem[] = [{ href: "/admin", label: "Administration" }];
+const ADMIN_NAV: NavItem[] = [
+  { href: "/admin", label: "Administration" },
+  { href: "/how-it-works", label: "How it works" },
+];
 
 function NavSection({
   title,
