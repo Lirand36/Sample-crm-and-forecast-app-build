@@ -1,172 +1,80 @@
 "use client";
 
-// When each deal signs: every evaluated deal as a range from fast to slow pace, a mark at standard pace, against
-// the quarter end. The forecast's timing logic, visible at a glance: a deal counts only if its range fits.
+// Does each deal sign this quarter? Three answers, each with its total and a one-line reason per deal.
 
 import Link from "next/link";
-import {
-  addDays,
-  compareDates,
-  daysBetween,
-  formatDisplayDate,
-  maxDate,
-  minDate,
-  type IsoDate,
-} from "@/domain/dates";
+import { formatDisplayDate, type IsoDate } from "@/domain/dates";
 import type { ForecastLine } from "@/domain/forecast";
-import { formatAmount } from "@/domain/money";
+import { formatAmount, sumCents, type Cents } from "@/domain/money";
 import { GROUP_LABEL } from "@/features/shell/labels";
 
 const short = (x: IsoDate) => formatDisplayDate(x).replace(/, \d{4}$/, "");
+const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
-export function QuarterMap({
-  lines,
-  asOf,
-  quarterEnd: qe,
-}: {
-  lines: readonly ForecastLine[];
-  asOf: IsoDate;
-  quarterEnd: IsoDate;
-}) {
-  const rows = lines
-    .filter((l) => l.eligibility.kind === "evaluated" && l.group !== "excluded")
-    .map((l) => ({ l, esd: l.view.timing.esd }))
-    .sort((a, b) => {
-      const x = a.esd.standard ?? a.esd.slow;
-      const y = b.esd.standard ?? b.esd.slow;
-      return x && y
-        ? compareDates(x, y)
-        : x
-          ? -1
-          : y
-            ? 1
-            : (b.l.tcv ?? 0) - (a.l.tcv ?? 0);
-    });
-  if (rows.length === 0) return null;
+type Column = "yes" | "maybe" | "no";
 
-  // The window: today to a few weeks past the quarter, or the latest standard date if sooner than 10 weeks out.
-  let end = addDays(qe, 21);
-  for (const { esd } of rows)
-    if (esd.standard)
-      end = maxDate(end, minDate(esd.standard, addDays(qe, 70)));
-  const span = daysBetween(asOf, end);
-  const x = (d: IsoDate) =>
-    Math.max(0, Math.min(100, (daysBetween(asOf, d) / span) * 100));
-  const qeX = x(qe);
-  const max = Math.max(...rows.map((r) => r.l.tcv ?? 0), 1);
+const COLUMNS: { key: Column; title: string; sub: string }[] = [
+  { key: "yes", title: "Signs this quarter", sub: "Counted in the forecast" },
+  { key: "maybe", title: "Could sign this quarter", sub: "Upside, not counted" },
+  { key: "no", title: "Not this quarter", sub: "Not counted" },
+];
 
-  // Month ticks
-  const ticks: { at: number; label: string }[] = [];
-  const [y0, m0] = asOf.split("-").map(Number) as [number, number];
-  for (let i = 1; i < 8; i++) {
-    const m = ((m0 - 1 + i) % 12) + 1;
-    const y = y0 + Math.floor((m0 - 1 + i) / 12);
-    const d = `${y}-${String(m).padStart(2, "0")}-01` as IsoDate;
-    if (compareDates(d, end) > 0) break;
-    ticks.push({ at: x(d), label: short(d).replace(/ 1$/, "") });
+function columnOf(l: ForecastLine): Column | null {
+  if (l.group === "excluded") return null;
+  if (l.group === "signed" || l.group === "firm" || l.group === "core") return "yes";
+  return l.group === "stretch" ? "maybe" : "no";
+}
+
+function why(l: ForecastLine): string {
+  const o = l.view.opportunity;
+  if (l.group === "signed") return o.signedDate ? `Signed ${short(o.signedDate)}` : "Signed";
+  const esd = l.view.timing.esd.standard;
+  if (l.group === "firm") return `Expected ${esd ? short(esd) : "—"}, with room even if slow`;
+  if (l.group === "core") return `Expected ${esd ? short(esd) : "—"}, if it keeps a normal pace`;
+  if (l.group === "late") return `Expected ${esd ? short(esd) : "—"}, after the quarter`;
+  return l.reasons[0] ? cap(l.reasons[0]) : GROUP_LABEL[l.group];
+}
+
+export function QuarterMap({ lines, quarterEnd }: { lines: readonly ForecastLine[]; quarterEnd: IsoDate }) {
+  const by: Record<Column, ForecastLine[]> = { yes: [], maybe: [], no: [] };
+  for (const l of lines) {
+    const c = columnOf(l);
+    if (c) by[c].push(l);
   }
+  for (const k of Object.keys(by) as Column[]) by[k].sort((a, b) => (b.tcv ?? 0) - (a.tcv ?? 0));
+  const total = (ls: ForecastLine[]) => sumCents(ls.map((l) => (l.tcv ?? 0) as Cents));
+  const sure = total(by.yes.filter((l) => l.group === "signed" || l.group === "firm"));
 
   return (
-    <div className="qmap card" data-testid="quarter-map">
-      <div className="qmap-head">
-        <div>
-          <h2>When each deal signs</h2>
-          <p className="muted small">
-            Each bar runs from fast to slow pace and the mark is standard pace.
-            A committed deal counts when its mark is inside the quarter. If only
-            the fast end gets in, it is stretch.
-          </p>
+    <section className="qboard" data-testid="quarter-map" aria-label={`Which deals sign by ${formatDisplayDate(quarterEnd)}`}>
+      {COLUMNS.map((c) => (
+        <div key={c.key} className={`qcol q-${c.key}`}>
+          <div className="qcol-head">
+            <div>
+              <h2>{c.title}</h2>
+              <span className="muted small">{c.sub}</span>
+            </div>
+            <strong className="qcol-total">{formatAmount(total(by[c.key]))}</strong>
+          </div>
+          {by[c.key].length === 0 ? <p className="muted small">None.</p> : null}
+          <ul>
+            {by[c.key].map((l) => (
+              <li key={l.view.opportunity.id}>
+                <Link href={`/forecast/deals/${l.view.opportunity.id}`} className="qdeal">
+                  <span className="qdeal-name">{l.view.account?.name ?? l.view.opportunity.name}</span>
+                  <span className="qdeal-amount">{l.tcv === null ? "—" : formatAmount(l.tcv)}</span>
+                  <span className="qdeal-why">{why(l)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {c.key === "yes" && sure > 0 ? (
+            <p className="qcol-note small muted">
+              Signed or Firm: {formatAmount(sure)}. That is the low end of the range.
+            </p>
+          ) : null}
         </div>
-        <div className="qmap-key small">
-          <span>
-            <i className="kc counted" />
-            Counted
-          </span>
-          <span>
-            <i className="kc stretch" />
-            Stretch
-          </span>
-          <span>
-            <i className="kc out" />
-            Not counted
-          </span>
-        </div>
-      </div>
-      <div className="qmap-grid">
-        <div className="qmap-axis">
-          <span className="qmap-tick today" style={{ left: "0%" }}>
-            Today
-          </span>
-          {ticks.map((t) => (
-            <span
-              key={t.label}
-              className="qmap-tick"
-              style={{ left: `${t.at}%` }}
-            >
-              {t.label}
-            </span>
-          ))}
-        </div>
-        {rows.map(({ l, esd }) => {
-          const o = l.view.opportunity;
-          const kind = ["signed", "firm", "core"].includes(l.group)
-            ? "counted"
-            : l.group === "stretch"
-              ? "stretch"
-              : "out";
-          const from = esd.fast ?? esd.standard;
-          const to = esd.slow;
-          const beyond = to === null || compareDates(to, end) > 0;
-          return (
-            <Link
-              key={o.id}
-              href={`/forecast/deals/${o.id}`}
-              className={`qmap-row ${kind}`}
-            >
-              <span className="qmap-name">
-                <strong>{l.view.account?.name ?? o.name}</strong>
-                <span className="muted small">
-                  {l.tcv === null ? "—" : formatAmount(l.tcv)} ·{" "}
-                  {GROUP_LABEL[l.group]}
-                </span>
-              </span>
-              <span className="qmap-lane">
-                <span className="qmap-after" style={{ left: `${qeX}%` }} />
-                <span className="qmap-qe" style={{ left: `${qeX}%` }} />
-                {from ? (
-                  <span
-                    className={`qmap-bar${beyond ? " open" : ""}`}
-                    style={{
-                      left: `${x(from)}%`,
-                      width: `${Math.max((to ? x(to) : 100) - x(from), 0.8)}%`,
-                      height: `${8 + ((l.tcv ?? 0) / max) * 10}px`,
-                    }}
-                  />
-                ) : null}
-                {esd.standard ? (
-                  <span
-                    className="qmap-mark"
-                    style={{ left: `${x(esd.standard)}%` }}
-                    title={`Standard pace ${formatDisplayDate(esd.standard)}`}
-                  />
-                ) : (
-                  <span className="qmap-none small">
-                    {l.view.timing.missingFast
-                      ? "No date: a step has no estimate"
-                      : "No estimate"}
-                  </span>
-                )}
-              </span>
-              <span className="qmap-date small">
-                {esd.standard ? short(esd.standard) : "—"}
-              </span>
-            </Link>
-          );
-        })}
-        <div className="qmap-foot small muted">
-          <span style={{ left: `${qeX}%` }}>Quarter end {short(qe)}</span>
-        </div>
-      </div>
-    </div>
+      ))}
+    </section>
   );
 }

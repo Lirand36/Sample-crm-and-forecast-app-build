@@ -34,7 +34,7 @@ export function OpportunityForm(props: Props) {
   const [arr, setArr] = useState(centsToDollarInput(existing?.arr ?? null));
   const [term, setTerm] = useState(existing?.termMonths === null || existing?.termMonths === undefined ? (existing ? "" : "36") : String(existing.termMonths));
   const [nonRecurring, setNonRecurring] = useState(centsToDollarInput(existing?.nonRecurring ?? null));
-  const [stage, setStage] = useState<Stage>(existing?.stage ?? "S0 - Meeting");
+  const [stage, setStage] = useState<Stage>(existing?.stage ?? "Discovery");
   const [statusReason, setStatusReason] = useState(existing?.statusReason ?? "");
   const [signedDate, setSignedDate] = useState(existing?.signedDate ?? "");
   const [closeDate, setCloseDate] = useState(existing?.closeDate ?? "");

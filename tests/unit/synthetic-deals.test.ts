@@ -91,7 +91,7 @@ function build(s: Synth): ForecastInput {
     nonRecurring: usdM(0.1),
     status: s.status ?? "open",
     signedDate: s.signedDate ? isoDate(s.signedDate) : null,
-    stage: s.status === "won" ? "S7 - Closed Won" : "S5 - Contracting",
+    stage: s.status === "won" ? "Closed won" : "Contract",
   };
   const events: DealEvent[] = [];
   const evidence: Evidence[] = [];

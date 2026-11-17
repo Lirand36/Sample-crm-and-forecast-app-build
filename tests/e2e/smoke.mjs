@@ -222,7 +222,9 @@ check("example carries no synthetic label (R-8, Liran's decision)", (await page.
 // Visual path and quarter map
 await page.goto(`${base}/forecast`);
 await page.getByTestId("quarter-map").waitFor();
-check("quarter map: one row per evaluated deal, Airline Group at Mar 22", /Airline Group[\s\S]*Mar 22/.test(await page.getByTestId("quarter-map").innerText()));
+const board = await page.getByTestId("quarter-map").innerText();
+check("quarter board: $26M signs this quarter, Airline Group is upside, National Bank not this quarter",
+  /Signs this quarter[\s\S]*\$26M/.test(board) && /Could sign this quarter[\s\S]*Airline Group[\s\S]*Not this quarter/.test(board) && /Not this quarter[\s\S]*National Bank/.test(board), board.replace(/\s+/g, " ").slice(0, 300));
 await page.goto(`${base}/forecast/deals/opp-airline`);
 await page.getByTestId("signature-path").waitFor();
 await page.locator(".sp-station.k-in_progress", { hasText: "Pilot" }).click();

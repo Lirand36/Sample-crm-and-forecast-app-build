@@ -212,7 +212,7 @@ export default function OpportunityDetailPage() {
               <p>
                 Archive this opportunity if it should not be in the pipeline at all, for example a duplicate or a record
                 created by mistake. It leaves the forecast; the record and its history are kept. To record a loss, set the
-                stage to S9 - Closed Lost instead.
+                stage to Closed lost instead.
               </p>
               <FormError message={archiveError} />
               <label className="field">
