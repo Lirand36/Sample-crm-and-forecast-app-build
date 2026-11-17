@@ -25,12 +25,6 @@ export function DecisionTrail({ line }: { line: ForecastLine }) {
 
   const gates: { title: string; mark: Mark; value: string; note: string }[] = [
     {
-      title: "In the forecast",
-      mark: "pass",
-      value: "Open, with a TCV",
-      note: "Lost, PAYG, archived and no-TCV deals stop here.",
-    },
-    {
       title: "Customer committed",
       mark: committed ? "pass" : c.level === "engaged" ? "partial" : "fail",
       value: COMMITMENT_LABEL[c.level],

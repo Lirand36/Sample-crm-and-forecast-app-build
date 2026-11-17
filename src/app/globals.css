@@ -3152,7 +3152,7 @@ strong.manager {
 /* ---------- Decision trail ---------- */
 .trail {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 0.8fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 0.8fr);
   gap: 0;
   margin: 6px 0 22px;
   background: var(--surface);
