@@ -52,7 +52,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const readAll = useCallback(async (store: DataStore, revision: number) => {
+  // A counter, not the rendered revision: a refresh from a stale closure (an action that switched user first)
+  // must still bump the revision, or the pages would not reload.
+  const rev = useRef(0);
+  const readAll = useCallback(async (store: DataStore) => {
+    const revision = rev.current++;
     const session = await store.repos.session.get("session");
     if (!session) throw new Error("Session record missing after seeding");
     const users = await store.repos.users.list();
@@ -68,7 +72,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await ensureSeeded(store, buildCanonicalSeed());
         if (!cancelled) {
           await track(store, null);
-          await readAll(store, 0);
+          await readAll(store);
         }
       } catch (error) {
         if (!cancelled) setState({ status: "error", message: error instanceof Error ? error.message : String(error) });
@@ -91,7 +95,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       revision,
       refresh: async (label?: string) => {
         await track(store, label ?? "Your change");
-        await readAll(store, revision + 1);
+        await readAll(store);
       },
       impact,
       dismissImpact: () => setImpact(null),
@@ -99,11 +103,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await resetToSeed(store, buildCanonicalSeed());
         setImpact(null);
         await track(store, null);
-        await readAll(store, revision + 1);
+        await readAll(store);
       },
       setActingUser: async (userId: string) => {
         await store.repos.session.put({ ...session, actingUserId: userId });
-        await readAll(store, revision + 1);
+        await readAll(store);
       },
     };
   }, [state, readAll, track, impact]);

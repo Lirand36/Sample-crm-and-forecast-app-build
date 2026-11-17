@@ -273,6 +273,36 @@ await page.goto(`${base}/crm/opportunities`);
 await page.locator("tbody tr").first().waitFor();
 check("restore removes the created opportunity and restores TCV", (await page.locator("tbody tr").count()) === 10 && (await page.locator("tbody tr", { hasText: "Retail Enterprise" }).innerText()).includes("$1.5M"));
 
+// Forecast actions from Slack: good news waits for RevOps, then counts; bad news counts at once
+await page.getByRole("link", { name: "Administration" }).click();
+await page.getByTestId("reset-start").click();
+await page.getByTestId("reset").click();
+await page.waitForFunction(() => document.querySelector('select[aria-label="Signed in as"]')?.value === "u-cro");
+await role.selectOption("u-mgr-a");
+await page.getByRole("link", { name: "Slack", exact: true }).click();
+await page.getByTestId("slack").waitFor();
+const liveCore = () => page.getByTestId("live-core").innerText();
+check("Slack: live forecast starts at $26M", (await liveCore()) === "$26M", await liveCore());
+await page.getByRole("button", { name: "Run /forecast" }).click();
+await page.getByTestId("slack-menu").last().getByRole("button", { name: /Good news/ }).click();
+await page.getByLabel("Deal").selectOption("opp-airline");
+await page.getByLabel("Step").selectOption("vendor_selection");
+await page.getByTestId("slack-submit").click();
+await page.getByTestId("slack-approve").waitFor();
+check("Slack: good news waits for review, forecast unchanged", (await liveCore()) === "$26M" && (await page.getByTestId("slack-bot").last().innerText()).includes("Waiting for review"));
+await page.getByTestId("slack-approve").click();
+await page.getByRole("button", { name: /Approve as Sam Ortiz/ }).click();
+await page.waitForFunction(() => document.querySelector('[data-testid="live-core"]')?.textContent === "$28.5M", null, { timeout: 5000 }).catch(() => {});
+check("Slack: RevOps approves, forecast $26M → $28.5M", (await liveCore()) === "$28.5M", await liveCore());
+await role.selectOption("u-mgr-b");
+await page.getByRole("button", { name: "Run /forecast" }).click();
+await page.getByTestId("slack-menu").last().getByRole("button", { name: /Bad news/ }).click();
+await page.getByLabel("Deal").selectOption("opp-energy");
+await page.getByLabel("Step").selectOption("procurement_legal");
+await page.getByTestId("slack-submit").click();
+await page.waitForFunction(() => document.querySelector('[data-testid="live-core"]')?.textContent === "$16M", null, { timeout: 5000 }).catch(() => {});
+check("Slack: bad news on Energy applies at once, $28.5M → $16M", (await liveCore()) === "$16M", await liveCore());
+
 check("no page errors", errors.length === 0, errors.join("; "));
 await browser.close();
 if (failures.length) {

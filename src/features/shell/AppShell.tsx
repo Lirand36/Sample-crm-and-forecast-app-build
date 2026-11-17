@@ -22,6 +22,7 @@ const CRM_NAV: NavItem[] = [
 const APPS_NAV: NavItem[] = [
   { href: "/forecast", label: "Forecast" },
   { href: "/forecast/backtest", label: "Previous quarters", sub: true },
+  { href: "/slack", label: "Slack" },
 ];
 const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Administration" },

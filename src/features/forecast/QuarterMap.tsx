@@ -11,7 +11,7 @@ import { GROUP_LABEL } from "@/features/shell/labels";
 const short = (x: IsoDate) => formatDisplayDate(x).replace(/, \d{4}$/, "");
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
-type Column = "yes" | "maybe" | "no";
+export type Column = "yes" | "maybe" | "no";
 
 const COLUMNS: { key: Column; title: string; sub: string }[] = [
   { key: "yes", title: "Signs this quarter", sub: "Counted in the forecast" },
@@ -19,7 +19,7 @@ const COLUMNS: { key: Column; title: string; sub: string }[] = [
   { key: "no", title: "Not this quarter", sub: "Not counted" },
 ];
 
-function columnOf(l: ForecastLine): Column | null {
+export function columnOf(l: ForecastLine): Column | null {
   if (l.group === "excluded") return null;
   if (l.group === "signed" || l.group === "firm" || l.group === "core") return "yes";
   return l.group === "stretch" ? "maybe" : "no";
