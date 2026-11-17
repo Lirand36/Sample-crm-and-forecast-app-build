@@ -2427,3 +2427,39 @@ details.card[open] {
     gap: 4px;
   }
 }
+
+/* When the forecast changes (a dispute, next week, an approval), the shapes move to their new place. */
+@media (prefers-reduced-motion: no-preference) {
+  .qmap-bar,
+  .qmap-mark,
+  .wf-bar,
+  .progress-fill,
+  .progress-range,
+  .sp-station,
+  .sp-sign,
+  .sp-line,
+  .sp-qe {
+    transition: left 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), width 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .qmap-bar {
+    transition-property: left, width, background-color;
+  }
+}
+
+.steps-table summary {
+  cursor: pointer;
+  list-style: none;
+}
+.steps-table summary h2 {
+  display: inline;
+}
+.steps-table summary::before {
+  content: "▸ ";
+  color: var(--muted);
+}
+.steps-table[open] summary::before {
+  content: "▾ ";
+}
+.steps-table summary {
+  margin: 24px 0 10px;
+}
